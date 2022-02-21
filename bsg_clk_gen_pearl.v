@@ -10,7 +10,7 @@ module bsg_clk_gen_pearl
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
    , parameter `BSG_INV_PARAM(tag_local_els_p)
    )
-  (input                                    osc_clk_i
+  (input                                    ext_clk_i
    , input                                  async_output_disable_i
 
    , input                                  tag_clk_i
@@ -18,11 +18,11 @@ module bsg_clk_gen_pearl
    , input [`BSG_SAFE_CLOG2(tag_els_p)-1:0] tag_node_id_offset_i
 
    , output logic                           clk_o
-   , output logic                           reset_o
+   // downsampled clock, for viewing off-chip
    , output logic                           clk_monitor_o
    );
 
-  bsg_chip_clk_gen_tag_lines_s tag_lines_lo;
+  bsg_clk_gen_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
      ,.local_els_p(tag_local_els_p)
@@ -64,18 +64,9 @@ module bsg_clk_gen_pearl
      ,.bsg_osc_trigger_tag_i(tag_lines_lo.osc_trigger)
      ,.bsg_ds_tag_i(tag_lines_lo.ds)
      ,.async_osc_reset_i(async_reset_lo)
-     ,.ext_clk_i(osc_clk_i)
+     ,.ext_clk_i(ext_clk_i)
      ,.select_i(clk_select_n)
      ,.clk_o(clk_lo)
-     );
-
-  bsg_tag_client
-   #(.width_p(1))
-   btc_reset
-    (.bsg_tag_i(tag_lines_lo.core_reset)
-     ,.recv_clk_i(clk_lo)
-     ,.recv_new_r_o()
-     ,.recv_data_r_o(reset_o)
      );
 
   bsg_clk_gen_monitor
