@@ -69,7 +69,7 @@ module bsg_clk_gen_pearl
      ,.clk_o(clk_lo)
      );
 
-  bsg_clk_gen_monitor
+  bsg_clk_gen_pearl_monitor
    monitor
     (.bsg_tag_i(tag_lines_lo.monitor_reset)
      ,.clk_i(clk_lo)
