@@ -22,7 +22,7 @@ module bsg_clk_gen_pearl
    , output logic                           clk_monitor_o
    );
 
-  bsg_clk_gen_tag_lines_s tag_lines_lo;
+  bsg_clk_gen_pearl_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
      ,.local_els_p(tag_local_els_p)
