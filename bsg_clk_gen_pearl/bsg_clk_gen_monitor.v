@@ -1,5 +1,5 @@
 
-module bsg_clk_gen_monitor
+module bsg_clk_gen_pearl_monitor
  import bsg_tag_pkg::*;
   (input bsg_tag_s bsg_tag_i
    , input         clk_i
@@ -7,7 +7,7 @@ module bsg_clk_gen_monitor
    );
 
   logic clk_buf_lo;
-  bsg_clk_gen_monitor_clk_buf
+  bsg_clk_gen_pearl_monitor_clk_buf
    monitor_clk_buf
     (.i(clk_i)
      ,.o(clk_buf_lo)
@@ -24,7 +24,7 @@ module bsg_clk_gen_monitor
      ,.recv_data_r_o(reset_lo)
      );
 
-  bsg_clk_gen_lfsr_div30
+  bsg_clk_gen_pearl_lfsr_div30
    monitor_ds
     (.clk_i(clk_buf_lo)
      ,.reset_i(reset_lo)
