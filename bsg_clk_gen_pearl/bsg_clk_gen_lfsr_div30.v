@@ -1,4 +1,4 @@
-module bsg_clk_gen_lfsr_div30
+module bsg_clk_gen_pearl_lfsr_div30
   (input          clk_i
    , input        reset_i
    , output logic clk_div_o
