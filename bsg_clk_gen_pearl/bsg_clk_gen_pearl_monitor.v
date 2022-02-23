@@ -1,4 +1,6 @@
 
+`include "bsg_tag.vh"
+
 module bsg_clk_gen_pearl_monitor
  import bsg_tag_pkg::*;
   (input bsg_tag_s bsg_tag_i
