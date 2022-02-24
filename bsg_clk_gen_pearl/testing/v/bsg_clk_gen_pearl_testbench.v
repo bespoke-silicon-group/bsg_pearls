@@ -18,6 +18,8 @@ module bsg_clk_gen_pearl_testbench
   ,output tag_clk_o
   ,output tag_data_o
   ,output tag_en_o
+
+  ,input  watch_clk_i
   );
 
   logic tag_clk, tag_reset, ext_clk;
@@ -106,7 +108,7 @@ module bsg_clk_gen_pearl_testbench
   // ==========================================================
 
   logic clk_lo;
-  assign clk_lo = bsg_clk_gen_pearl_pcb.IC.clk_o;
+  assign clk_lo = watch_clk_i;
 
   // filter out first cycle to eliminate glitch from ds
   logic watch_state;

@@ -42,6 +42,8 @@ module bsg_clk_gen_pearl_pcb
   ,.tag_clk_o(tag_clk)
   ,.tag_data_o(tag_data)
   ,.tag_en_o(tag_en)
+  
+  ,.watch_clk_i(bsg_clk_gen_pearl_pcb.IC.clk_o)
   );
 
 endmodule
