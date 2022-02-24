@@ -287,7 +287,7 @@ module bsg_dmc_pearl
    #(.width_p($bits(bsg_clk_gen_ds_tag_payload_s)))
    btc_ds
     (.bsg_tag_i(tag_lines_lo.monitor_ds)
-     ,.async_data_r_o(ds_tag_payload_r)
+     ,.data_async_r_o(ds_tag_payload_r)
      );
 
   bsg_counter_clock_downsample
