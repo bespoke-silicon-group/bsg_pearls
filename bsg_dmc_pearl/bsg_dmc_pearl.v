@@ -183,10 +183,10 @@ module bsg_dmc_pearl
      ,.cmd_sfifo_depth_p(cmd_sfifo_depth_p)
      )
    dmc
-    (.dly_tag_lines_i(tag_lines_lo.dly_tag_lines)
-     ,.cfg_tag_lines_i(tag_lines_lo.cfg_tag_lines)
-     ,.sys_tag_lines_i(tag_lines_lo.sys_tag_lines)
-     ,.osc_tag_lines_i(tag_lines_lo.osc_tag_lines)
+    (.dly_tag_lines_i(tag_lines_lo.dly)
+     ,.cfg_tag_lines_i(tag_lines_lo.cfg)
+     ,.sys_tag_lines_i(tag_lines_lo.sys)
+     ,.osc_tag_lines_i(tag_lines_lo.osc)
 
      ,.ui_clk_i(ui_clk_i)
      ,.ui_clk_sync_rst_o(ui_reset_o)
