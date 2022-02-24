@@ -36,10 +36,7 @@ module bsg_clk_gen_pearl_pcb
   ,.clk_monitor_o()
   );
 
-  bsg_clk_gen_pearl_testbench
- #(.tag_els_p(toplevel_tag_els_p)
-  ,.tag_max_payload_width_p(toplevel_tag_max_payload_width_p)
-  ) GW
+  bsg_clk_gen_pearl_testbench GW
   (.ext_clk_o(ext_clk)
   ,.async_clk_gen_disable_o(async_clk_gen_disable)
 
