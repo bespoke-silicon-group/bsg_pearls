@@ -17,6 +17,8 @@ module bsg_dmc_pearl
    , parameter `BSG_INV_PARAM(dq_data_width_p)
    , parameter `BSG_INV_PARAM(cmd_afifo_depth_p)
    , parameter `BSG_INV_PARAM(cmd_sfifo_depth_p)
+   , parameter `BSG_INV_PARAM(trace_tfifo_depth_p)
+   , parameter `BSG_INV_PARAM(trace_rfifo_depth_p)
 
    , localparam trace_data_width_lp = `bsg_dmc_trace_entry_width(ui_data_width_p, ui_addr_width_p)
    , localparam ui_mask_width_lp    = ui_data_width_p >> 3
@@ -127,9 +129,9 @@ module bsg_dmc_pearl
   bsg_dmc_xilinx_ui_trace_replay
    #(.data_width_p(ui_data_width_p)
      ,.addr_width_p(ui_addr_width_p)
-     ,.burst_width_p(ui_burst_length_lp)
-     ,.cmd_tfifo_depth_p(trace_cmd_tfifo_depth_p)
-     ,.cmd_rfifo_depth_p(trace_cmd_rfifo_depth_p)
+     ,.burst_len_p(ui_burst_len_p)
+     ,.tfifo_depth_p(trace_tfifo_depth_p)
+     ,.rfifo_depth_p(trace_rfifo_depth_p)
      )
    trace_replay
     (.clk_i(ui_clk_i)
@@ -278,11 +280,11 @@ module bsg_dmc_pearl
         app_rd_data_end_o   = app_rd_data_valid;
       end
 
-  `declare_bsg_clk_gen_ds_tag_payload_s(downsample_width_p);
+  `declare_bsg_clk_gen_ds_tag_payload_s(ds_width_p);
   bsg_clk_gen_ds_tag_payload_s ds_tag_payload_r;
 
   bsg_tag_client_unsync
-   #(.width_p($bits(bsg_clk_gen_ds_tag_payload_s))
+   #(.width_p($bits(bsg_clk_gen_ds_tag_payload_s)))
    btc_ds
     (.bsg_tag_i(tag_lines_lo.monitor_ds)
      ,.async_data_r_o(ds_tag_payload_r)
