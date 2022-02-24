@@ -4,7 +4,7 @@ export BSG_DESIGNS_DIR        := $(abspath ../../../)
 export BSG_DESIGNS_TARGET_DIR := $(abspath ../../)
 
 CLK_GEN_SWEEP_DIR := $(abspath ./)
-POST_PTSI_SDF_DIR := $(BSG_DESIGNS_TARGET_DIR)/testing/rtl
+SIMULATION_DIR    := $(BSG_DESIGNS_TARGET_DIR)/testing/rtl
 
 SWEEP_RUNS_DIR    := $(CLK_GEN_SWEEP_DIR)/runs
 SWEEP_RESULTS_DIR := $(CLK_GEN_SWEEP_DIR)/results
@@ -34,7 +34,7 @@ run: $(RUNS)
 run-%: $(SWEEP_RUNS_DIR) $(SWEEP_RESULTS_DIR)
 	mkdir $(SWEEP_RUNS_DIR)/$*
 	cd $(SWEEP_RUNS_DIR)/$*                                                    \
-	&& ln -s $(POST_PTSI_SDF_DIR)/* .                                          \
+	&& ln -s $(SIMULATION_DIR)/* .                                          \
 	&& make run sdf_corner=$(subst sdf,,$(word 5, $(subst _, ,$*)))            \
 	            corner=$(subst $(subst ,, ),_,$(wordlist 1,3,$(subst _, ,$*))) \
 	            rc_corner=$(word 4, $(subst _, ,$*))                           \
