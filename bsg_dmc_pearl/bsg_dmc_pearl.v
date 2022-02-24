@@ -249,36 +249,59 @@ module bsg_dmc_pearl
      );
 
   always_comb
-    if (test_mode_o)
-      begin
-        app_addr                = trace_app_addr;
-        app_cmd                 = trace_app_cmd;
-        app_en                  = trace_app_en;
-        trace_app_rdy           = app_rdy;
-        app_wdf_wren            = trace_app_wdf_wren;
-        app_wdf_data            = trace_app_wdf_data;
-        app_wdf_mask            = trace_app_wdf_mask;
-        app_wdf_end             = trace_app_wdf_end;
-        trace_app_wdf_rdy       = app_wdf_rdy;
-        trace_app_rd_data_valid = app_rd_data_valid;
-        trace_app_rd_data       = app_rd_data_valid;
-        trace_app_rd_data_end   = app_rd_data_valid;
-      end
-    else
-      begin
-        app_addr            = app_addr_i;
-        app_cmd             = app_cmd_i;
-        app_en              = app_en_i;
-        app_rdy_o           = app_rdy;
-        app_wdf_wren        = app_wdf_wren_i;
-        app_wdf_data        = app_wdf_data_i;
-        app_wdf_mask        = app_wdf_mask_i;
-        app_wdf_end         = app_wdf_end_i;
-        app_wdf_rdy_o       = app_wdf_rdy;
-        app_rd_data_valid_o = app_rd_data_valid;
-        app_rd_data_o       = app_rd_data_valid;
-        app_rd_data_end_o   = app_rd_data_valid;
-      end
+    begin
+      app_addr                = '0;
+      app_cmd                 = '0;
+      app_en                  = '0;
+      app_rdy_o               = '0;
+      trace_app_rdy           = '0;
+
+      app_wdf_wren            = '0;
+      app_wdf_data            = '0;
+      app_wdf_mask            = '0;
+      app_wdf_end             = '0;
+      app_wdf_rdy_o           = '0;
+      trace_app_wdf_rdy       = '0;
+
+      trace_app_rd_data_valid = '0;
+      trace_app_rd_data       = '0;
+      trace_app_rd_data_end   = '0;
+
+      app_rd_data_valid_o = '0;
+      app_rd_data_o       = '0;
+      app_rd_data_end_o   = '0;
+
+      if (test_mode_o)
+        begin
+          app_addr                = trace_app_addr;
+          app_cmd                 = trace_app_cmd;
+          app_en                  = trace_app_en;
+          trace_app_rdy           = app_rdy;
+          app_wdf_wren            = trace_app_wdf_wren;
+          app_wdf_data            = trace_app_wdf_data;
+          app_wdf_mask            = trace_app_wdf_mask;
+          app_wdf_end             = trace_app_wdf_end;
+          trace_app_wdf_rdy       = app_wdf_rdy;
+          trace_app_rd_data_valid = app_rd_data_valid;
+          trace_app_rd_data       = app_rd_data_valid;
+          trace_app_rd_data_end   = app_rd_data_valid;
+        end
+      else
+        begin
+          app_addr            = app_addr_i;
+          app_cmd             = app_cmd_i;
+          app_en              = app_en_i;
+          app_rdy_o           = app_rdy;
+          app_wdf_wren        = app_wdf_wren_i;
+          app_wdf_data        = app_wdf_data_i;
+          app_wdf_mask        = app_wdf_mask_i;
+          app_wdf_end         = app_wdf_end_i;
+          app_wdf_rdy_o       = app_wdf_rdy;
+          app_rd_data_valid_o = app_rd_data_valid;
+          app_rd_data_o       = app_rd_data_valid;
+          app_rd_data_end_o   = app_rd_data_valid;
+        end
+    end
 
   `declare_bsg_clk_gen_ds_tag_payload_s(ds_width_p);
   bsg_clk_gen_ds_tag_payload_s ds_tag_payload_r;
