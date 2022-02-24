@@ -8,9 +8,8 @@ module bsg_clk_gen_pearl_pcb
  #(parameter `BSG_INV_PARAM(toplevel_tag_els_p)
   ,parameter `BSG_INV_PARAM(toplevel_tag_max_payload_width_p)
   ,parameter `BSG_INV_PARAM(toplevel_tag_node_id_offset_p)
-  // hardcoded osc and ds configurations
-  ,localparam toplevel_ds_width_lp = 6
-  ,localparam toplevel_num_adgs_lp = 1
+  ,parameter `BSG_INV_PARAM(toplevel_ds_width_p)
+  ,parameter `BSG_INV_PARAM(toplevel_num_adgs_p)
   )
 
   ();
@@ -19,8 +18,8 @@ module bsg_clk_gen_pearl_pcb
   logic tag_clk, tag_data, tag_en;
 
   bsg_clk_gen_pearl
- #(.ds_width_p(toplevel_ds_width_lp)
-  ,.num_adgs_p(toplevel_num_adgs_lp)
+ #(.ds_width_p(toplevel_ds_width_p)
+  ,.num_adgs_p(toplevel_num_adgs_p)
   ,.tag_els_p(toplevel_tag_els_p)
   ,.tag_lg_width_p(`BSG_SAFE_CLOG2(toplevel_tag_max_payload_width_p+1))
   ,.tag_local_els_p(bsg_clk_gen_pearl_tag_local_els_gp)
