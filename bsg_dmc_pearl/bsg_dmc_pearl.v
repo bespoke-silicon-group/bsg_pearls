@@ -13,7 +13,7 @@ module bsg_dmc_pearl
    , parameter `BSG_INV_PARAM(ds_width_p)
    , parameter `BSG_INV_PARAM(ui_addr_width_p)
    , parameter `BSG_INV_PARAM(ui_data_width_p)
-   , parameter `BSG_INV_PARAM(burst_data_width_p)
+   , parameter `BSG_INV_PARAM(ui_burst_len_p)
    , parameter `BSG_INV_PARAM(dq_data_width_p)
    , parameter `BSG_INV_PARAM(cmd_afifo_depth_p)
    , parameter `BSG_INV_PARAM(cmd_sfifo_depth_p)
@@ -171,18 +171,11 @@ module bsg_dmc_pearl
   logic [ui_data_width_p-1:0]      app_rd_data;
   logic                            app_rd_data_end;
 
-  logic                            app_ref_req;
-  logic                            app_ref_ack;
-  logic                            app_zq_req;
-  logic                            app_zq_ack;
-  logic                            app_sr_req;
-  logic                            app_sr_active;
-
   bsg_dmc
    #(.num_adgs_p(num_adgs_p)
      ,.ui_addr_width_p(ui_addr_width_p)
      ,.ui_data_width_p(ui_data_width_p)
-     ,.burst_data_width_p(burst_data_width_p)
+     ,.burst_data_width_p(ui_burst_len_p*ui_data_width_p)
      ,.dq_data_width_p(dq_data_width_p)
      ,.cmd_afifo_depth_p(cmd_afifo_depth_p)
      ,.cmd_sfifo_depth_p(cmd_sfifo_depth_p)
