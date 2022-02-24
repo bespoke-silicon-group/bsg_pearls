@@ -13,10 +13,16 @@ from bsg_tag_trace_gen import *
 #  4 = sel
 #  5 = monitor_reset
 
+if len(sys.argv) != 4:
+  print("USAGE:")
+  command = "python bsg_tag_boot.py {num_clients_p} {max_payload_width_p} {offset_p}"
+  print(command)
+  sys.exit("Error: tag trace generation failed")
+
 num_masters_p       = 1
-num_clients_p       = 6
-max_payload_width_p = 7
-offset_p            = 0
+num_clients_p       = int(sys.argv[1])
+max_payload_width_p = int(sys.argv[2])
+offset_p            = int(sys.argv[3])
 
 # instantiate tag trace gen
 tg = TagTraceGen(num_masters_p, num_clients_p, max_payload_width_p)

@@ -71,6 +71,19 @@ $(BSG_DESIGNS_TESTING_LIBRARY): $(BSG_OUT_DIR)
 	/usr/bin/tclsh bsg_config.tcl
 
 # ==========================================================
+# TOPLEVEL PARAMETERS
+# ==========================================================
+
+BSG_TOPLEVEL_PARAMS_DIR ?= $(BSG_DESIGNS_TARGET_DIR)/tcl/parameters.tcl
+BSG_TOPLEVEL_PARAMS := $(shell grep "=" $(BSG_TOPLEVEL_PARAMS_DIR))
+VCS_OPTIONS += $(foreach PARAM, $(BSG_TOPLEVEL_PARAMS), -pvalue+$(PARAM))
+
+#VCS_OPTIONS += +define+DUT_MODULE_NAME=$(TOP_HIER_BLOCK)
+
+VCS_OPTIONS += +define+BSG_OSC_BASE_DELAY=125
+VCS_OPTIONS += +define+BSG_OSC_GRANULARITY=5
+
+# ==========================================================
 # TRACE REPLAY ROMS
 # ==========================================================
 
@@ -78,27 +91,15 @@ BSG_TRACE_NAME  := bsg_tag_boot
 BSG_TRACE_PY    := $(BSG_DESIGNS_TARGET_DIR)/testing/py/$(BSG_TRACE_NAME).py
 BSG_TRACE_FILES := $(BSG_OUT_DIR)/$(BSG_TRACE_NAME).tr
 BSG_TRACE_ROMS  := $(BSG_OUT_DIR)/$(BSG_TRACE_NAME)_rom.v
+BSG_TRACE_PY_PARAMS := $(foreach PARAM, $(BSG_TOPLEVEL_PARAMS), $(word 2, $(subst =, ,$(PARAM))))
 
 $(BSG_TRACE_FILES): $(BSG_TRACE_PY) | $(BSG_OUT_DIR)
-	python $< > $@
+	python $< $(BSG_TRACE_PY_PARAMS) > $@
 
 $(BSG_TRACE_ROMS): $(BSG_TRACE_FILES) | $(BSG_OUT_DIR)
 	$(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< $(BSG_TRACE_NAME)_rom > $@
 
 VCS_OPTIONS += $(addprefix -v ,$(BSG_TRACE_ROMS))
-
-# ==========================================================
-# TOPLEVEL PARAMETERS
-# ==========================================================
-
-# BSG_TOPLEVEL_PARAMS_DIR ?= $(BSG_DESIGNS_TARGET_DIR)/tcl/parameters.tcl
-# BSG_TOPLEVEL_PARAMS := $(shell grep "=" $(BSG_TOPLEVEL_PARAMS_DIR))
-# VCS_OPTIONS += $(foreach PARAM, $(BSG_TOPLEVEL_PARAMS), -pvalue+toplevel_$(PARAM))
-
-#VCS_OPTIONS += +define+DUT_MODULE_NAME=$(TOP_HIER_BLOCK)
-
-VCS_OPTIONS += +define+BSG_OSC_BASE_DELAY=125
-VCS_OPTIONS += +define+BSG_OSC_GRANULARITY=5
 
 # ==========================================================
 # RUN TARGETS
