@@ -37,7 +37,7 @@ module bsg_clk_gen_pearl_pcb
   );
 
   bsg_clk_gen_pearl_testbench
- #(.tag_num_clients_p(toplevel_tag_els_p)
+ #(.tag_els_p(toplevel_tag_els_p)
   ,.tag_max_payload_width_p(toplevel_tag_max_payload_width_p)
   ) GW
   (.ext_clk_o(ext_clk)

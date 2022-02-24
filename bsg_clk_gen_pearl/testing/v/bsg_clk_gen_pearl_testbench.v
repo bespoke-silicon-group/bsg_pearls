@@ -8,7 +8,7 @@ module bsg_clk_gen_pearl_testbench
 
   import bsg_tag_pkg::*;
 
- #(parameter `BSG_INV_PARAM(tag_num_clients_p)
+ #(parameter `BSG_INV_PARAM(tag_els_p)
   ,parameter `BSG_INV_PARAM(tag_max_payload_width_p)
   )
 
@@ -52,7 +52,7 @@ module bsg_clk_gen_pearl_testbench
   // ==========================================================
 
   localparam tag_num_masters_lp          = 1;
-  localparam tag_num_clients_lp          = tag_num_clients_p;
+  localparam tag_num_clients_lp          = tag_els_p;
   localparam tag_max_payload_width_lp    = tag_max_payload_width_p;
   localparam tag_lg_max_payload_width_lp = `BSG_SAFE_CLOG2(tag_max_payload_width_lp+1);
   localparam tag_trace_rom_addr_width_lp = 32;
