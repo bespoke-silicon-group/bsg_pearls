@@ -198,7 +198,7 @@ module bsg_dmc_pearl
      ,.app_wdf_data_i(app_wdf_data)
      ,.app_wdf_mask_i(app_wdf_mask)
      ,.app_wdf_end_i(app_wdf_end)
-     ,.app_wdf_rdy_i(app_wdf_rdy)
+     ,.app_wdf_rdy_o(app_wdf_rdy)
      ,.app_rd_data_valid_o(app_rd_data_valid)
      ,.app_rd_data_o(app_rd_data)
      ,.app_rd_data_end_o(app_rd_data_end)
