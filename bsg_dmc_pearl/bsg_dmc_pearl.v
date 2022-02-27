@@ -8,7 +8,6 @@ module bsg_dmc_pearl
  import bsg_dmc_pearl_pkg::*;
  #(parameter `BSG_INV_PARAM(tag_els_p)
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
-   , parameter `BSG_INV_PARAM(tag_local_els_p)
    , parameter `BSG_INV_PARAM(num_adgs_p)
    , parameter `BSG_INV_PARAM(ds_width_p)
    , parameter `BSG_INV_PARAM(ui_addr_width_p)
@@ -102,7 +101,7 @@ module bsg_dmc_pearl
   bsg_dmc_pearl_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
-     ,.local_els_p(tag_local_els_p)
+     ,.local_els_p(bsg_dmc_pearl_tag_local_els_gp)
      ,.lg_width_p(tag_lg_width_p)
      )
    btm
