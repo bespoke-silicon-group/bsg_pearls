@@ -9,7 +9,6 @@ module bsg_clk_gen_pearl
    , parameter `BSG_INV_PARAM(num_adgs_p)
    , parameter `BSG_INV_PARAM(tag_els_p)
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
-   , parameter `BSG_INV_PARAM(tag_local_els_p)
    )
   (input                                    ext_clk_i
    , input                                  async_output_disable_i
@@ -26,7 +25,7 @@ module bsg_clk_gen_pearl
   bsg_clk_gen_pearl_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
-     ,.local_els_p(tag_local_els_p)
+     ,.local_els_p(bsg_clk_gen_pearl_tag_local_els_gp)
      ,.lg_width_p(tag_lg_width_p)
      )
    btm
