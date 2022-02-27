@@ -282,8 +282,8 @@ module bsg_dmc_pearl
           app_wdf_end             = trace_app_wdf_end;
           trace_app_wdf_rdy       = app_wdf_rdy;
           trace_app_rd_data_valid = app_rd_data_valid;
-          trace_app_rd_data       = app_rd_data_valid;
-          trace_app_rd_data_end   = app_rd_data_valid;
+          trace_app_rd_data       = app_rd_data;
+          trace_app_rd_data_end   = app_rd_data_end;
         end
       else
         begin
@@ -297,8 +297,8 @@ module bsg_dmc_pearl
           app_wdf_end         = app_wdf_end_i;
           app_wdf_rdy_o       = app_wdf_rdy;
           app_rd_data_valid_o = app_rd_data_valid;
-          app_rd_data_o       = app_rd_data_valid;
-          app_rd_data_end_o   = app_rd_data_valid;
+          app_rd_data_o       = app_rd_data;
+          app_rd_data_end_o   = app_rd_data_end;
         end
     end
 
