@@ -8,15 +8,16 @@ module bsg_dmc_pearl
  import bsg_dmc_pearl_pkg::*;
  #(parameter `BSG_INV_PARAM(tag_els_p)
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
-   , parameter `BSG_INV_PARAM(tag_local_els_p)
    , parameter `BSG_INV_PARAM(num_adgs_p)
    , parameter `BSG_INV_PARAM(ds_width_p)
    , parameter `BSG_INV_PARAM(ui_addr_width_p)
    , parameter `BSG_INV_PARAM(ui_data_width_p)
-   , parameter `BSG_INV_PARAM(burst_data_width_p)
+   , parameter `BSG_INV_PARAM(ui_burst_len_p)
    , parameter `BSG_INV_PARAM(dq_data_width_p)
    , parameter `BSG_INV_PARAM(cmd_afifo_depth_p)
    , parameter `BSG_INV_PARAM(cmd_sfifo_depth_p)
+   , parameter `BSG_INV_PARAM(trace_tfifo_depth_p)
+   , parameter `BSG_INV_PARAM(trace_rfifo_depth_p)
 
    , localparam trace_data_width_lp = `bsg_dmc_trace_entry_width(ui_data_width_p, ui_addr_width_p)
    , localparam ui_mask_width_lp    = ui_data_width_p >> 3
@@ -100,7 +101,7 @@ module bsg_dmc_pearl
   bsg_dmc_pearl_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
-     ,.local_els_p(tag_local_els_p)
+     ,.local_els_p(bsg_dmc_pearl_tag_local_els_gp)
      ,.lg_width_p(tag_lg_width_p)
      )
    btm
@@ -127,9 +128,9 @@ module bsg_dmc_pearl
   bsg_dmc_xilinx_ui_trace_replay
    #(.data_width_p(ui_data_width_p)
      ,.addr_width_p(ui_addr_width_p)
-     ,.burst_width_p(ui_burst_length_lp)
-     ,.cmd_tfifo_depth_p(trace_cmd_tfifo_depth_p)
-     ,.cmd_rfifo_depth_p(trace_cmd_rfifo_depth_p)
+     ,.burst_len_p(ui_burst_len_p)
+     ,.tfifo_depth_p(trace_tfifo_depth_p)
+     ,.rfifo_depth_p(trace_rfifo_depth_p)
      )
    trace_replay
     (.clk_i(ui_clk_i)
@@ -171,27 +172,20 @@ module bsg_dmc_pearl
   logic [ui_data_width_p-1:0]      app_rd_data;
   logic                            app_rd_data_end;
 
-  logic                            app_ref_req;
-  logic                            app_ref_ack;
-  logic                            app_zq_req;
-  logic                            app_zq_ack;
-  logic                            app_sr_req;
-  logic                            app_sr_active;
-
   bsg_dmc
    #(.num_adgs_p(num_adgs_p)
      ,.ui_addr_width_p(ui_addr_width_p)
      ,.ui_data_width_p(ui_data_width_p)
-     ,.burst_data_width_p(burst_data_width_p)
+     ,.burst_data_width_p(ui_burst_len_p*ui_data_width_p)
      ,.dq_data_width_p(dq_data_width_p)
      ,.cmd_afifo_depth_p(cmd_afifo_depth_p)
      ,.cmd_sfifo_depth_p(cmd_sfifo_depth_p)
      )
    dmc
-    (.dly_tag_lines_i(tag_lines_lo.dly_tag_lines)
-     ,.cfg_tag_lines_i(tag_lines_lo.cfg_tag_lines)
-     ,.sys_tag_lines_i(tag_lines_lo.sys_tag_lines)
-     ,.osc_tag_lines_i(tag_lines_lo.osc_tag_lines)
+    (.dly_tag_lines_i(tag_lines_lo.dly)
+     ,.cfg_tag_lines_i(tag_lines_lo.cfg)
+     ,.sys_tag_lines_i(tag_lines_lo.sys)
+     ,.osc_tag_lines_i(tag_lines_lo.osc)
 
      ,.ui_clk_i(ui_clk_i)
      ,.ui_clk_sync_rst_o(ui_reset_o)
@@ -203,7 +197,7 @@ module bsg_dmc_pearl
      ,.app_wdf_data_i(app_wdf_data)
      ,.app_wdf_mask_i(app_wdf_mask)
      ,.app_wdf_end_i(app_wdf_end)
-     ,.app_wdf_rdy_i(app_wdf_rdy)
+     ,.app_wdf_rdy_o(app_wdf_rdy)
      ,.app_rd_data_valid_o(app_rd_data_valid)
      ,.app_rd_data_o(app_rd_data)
      ,.app_rd_data_end_o(app_rd_data_end)
@@ -254,45 +248,68 @@ module bsg_dmc_pearl
      );
 
   always_comb
-    if (test_mode_o)
-      begin
-        app_addr                = trace_app_addr;
-        app_cmd                 = trace_app_cmd;
-        app_en                  = trace_app_en;
-        trace_app_rdy           = app_rdy;
-        app_wdf_wren            = trace_app_wdf_wren;
-        app_wdf_data            = trace_app_wdf_data;
-        app_wdf_mask            = trace_app_wdf_mask;
-        app_wdf_end             = trace_app_wdf_end;
-        trace_app_wdf_rdy       = app_wdf_rdy;
-        trace_app_rd_data_valid = app_rd_data_valid;
-        trace_app_rd_data       = app_rd_data_valid;
-        trace_app_rd_data_end   = app_rd_data_valid;
-      end
-    else
-      begin
-        app_addr            = app_addr_i;
-        app_cmd             = app_cmd_i;
-        app_en              = app_en_i;
-        app_rdy_o           = app_rdy;
-        app_wdf_wren        = app_wdf_wren_i;
-        app_wdf_data        = app_wdf_data_i;
-        app_wdf_mask        = app_wdf_mask_i;
-        app_wdf_end         = app_wdf_end_i;
-        app_wdf_rdy_o       = app_wdf_rdy;
-        app_rd_data_valid_o = app_rd_data_valid;
-        app_rd_data_o       = app_rd_data_valid;
-        app_rd_data_end_o   = app_rd_data_valid;
-      end
+    begin
+      app_addr                = '0;
+      app_cmd                 = '0;
+      app_en                  = '0;
+      app_rdy_o               = '0;
+      trace_app_rdy           = '0;
 
-  `declare_bsg_clk_gen_ds_tag_payload_s(downsample_width_p);
+      app_wdf_wren            = '0;
+      app_wdf_data            = '0;
+      app_wdf_mask            = '0;
+      app_wdf_end             = '0;
+      app_wdf_rdy_o           = '0;
+      trace_app_wdf_rdy       = '0;
+
+      trace_app_rd_data_valid = '0;
+      trace_app_rd_data       = '0;
+      trace_app_rd_data_end   = '0;
+
+      app_rd_data_valid_o = '0;
+      app_rd_data_o       = '0;
+      app_rd_data_end_o   = '0;
+
+      if (test_mode_o)
+        begin
+          app_addr                = trace_app_addr;
+          app_cmd                 = trace_app_cmd;
+          app_en                  = trace_app_en;
+          trace_app_rdy           = app_rdy;
+          app_wdf_wren            = trace_app_wdf_wren;
+          app_wdf_data            = trace_app_wdf_data;
+          app_wdf_mask            = trace_app_wdf_mask;
+          app_wdf_end             = trace_app_wdf_end;
+          trace_app_wdf_rdy       = app_wdf_rdy;
+          trace_app_rd_data_valid = app_rd_data_valid;
+          trace_app_rd_data       = app_rd_data_valid;
+          trace_app_rd_data_end   = app_rd_data_valid;
+        end
+      else
+        begin
+          app_addr            = app_addr_i;
+          app_cmd             = app_cmd_i;
+          app_en              = app_en_i;
+          app_rdy_o           = app_rdy;
+          app_wdf_wren        = app_wdf_wren_i;
+          app_wdf_data        = app_wdf_data_i;
+          app_wdf_mask        = app_wdf_mask_i;
+          app_wdf_end         = app_wdf_end_i;
+          app_wdf_rdy_o       = app_wdf_rdy;
+          app_rd_data_valid_o = app_rd_data_valid;
+          app_rd_data_o       = app_rd_data_valid;
+          app_rd_data_end_o   = app_rd_data_valid;
+        end
+    end
+
+  `declare_bsg_clk_gen_ds_tag_payload_s(ds_width_p);
   bsg_clk_gen_ds_tag_payload_s ds_tag_payload_r;
 
   bsg_tag_client_unsync
-   #(.width_p($bits(bsg_clk_gen_ds_tag_payload_s))
+   #(.width_p($bits(bsg_clk_gen_ds_tag_payload_s)))
    btc_ds
     (.bsg_tag_i(tag_lines_lo.monitor_ds)
-     ,.async_data_r_o(ds_tag_payload_r)
+     ,.data_async_r_o(ds_tag_payload_r)
      );
 
   bsg_counter_clock_downsample
