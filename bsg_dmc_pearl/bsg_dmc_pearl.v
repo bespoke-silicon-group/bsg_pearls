@@ -50,7 +50,7 @@ module bsg_dmc_pearl
     , output logic                           app_rd_data_end_o
 
     // Status signals
-    , output logic                           dfi_clk_monitor_o
+    , output logic                           calib_clk_monitor_o
     , output logic                           init_calib_complete_o
     , output logic                           stall_transactions_o
     , output logic                           transaction_in_progress_o
@@ -315,10 +315,10 @@ module bsg_dmc_pearl
   bsg_counter_clock_downsample
    #(.width_p(ds_width_p), .harden_p(1))
    ds
-    (.clk_i(dfi_clk_2x_o)
+    (.clk_i(dfi_clk_1x_o)
     ,.reset_i(ds_tag_payload_r.reset)
     ,.val_i(ds_tag_payload_r.val)
-    ,.clk_r_o(dfi_clk_monitor_o)
+    ,.clk_r_o(calib_clk_monitor_o)
     );
 
 endmodule
