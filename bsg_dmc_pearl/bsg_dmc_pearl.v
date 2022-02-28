@@ -27,7 +27,7 @@ module bsg_dmc_pearl
    )
    (input                                    ui_clk_i
     , output logic                           ui_reset_o
-    , input                                  ext_dfi_clk_i
+    , input                                  ext_dfi_clk_2x_i
     , output logic                           dfi_clk_1x_o
     , output logic                           dfi_clk_2x_o
 
@@ -217,7 +217,7 @@ module bsg_dmc_pearl
      ,.refresh_in_progress_o(refresh_in_progress_o)
      ,.test_mode_o(test_mode_o)
 
-     ,.ext_dfi_clk_i(ext_dfi_clk_i)
+     ,.ext_dfi_clk_2x_i(ext_dfi_clk_2x_i)
      ,.ddr_ck_p_o(ddr_ck_p_o)
      ,.ddr_ck_n_o(ddr_ck_n_o)
      ,.ddr_cke_o(ddr_cke_o)
