@@ -498,7 +498,7 @@ module traffic_generator
         end
     end
 
-    assign trace_yumi_o = trace_v_i &  asic_link_upstream_core_ready_lo;
+    assign trace_yumi_o = asic_link_upstream_core_ready_lo & trace_v_i  ;
 
 	bsg_link_ddr_upstream
  					#(.width_p        (payload_width_lp)
@@ -522,8 +522,11 @@ module traffic_generator
  					 );
 
   	// ASIC SIDE LINKS END
-	assign dmc_adapter_yumi_lo = dmc_adapter_ready_lo & dmc_adapter_input_valid_lo;
+	assign dmc_adapter_yumi_lo = dmc_adapter_ready_lo & trace_ready_i;
   	
+    logic fifo_yumi_li;
+    assign fifo_yumi_li = trace_ready_i & trace_v_o;
+
 	// Trace packets going towards DMC
   	bsg_fifo_1r1w_small 
   						#(.width_p(payload_width_lp)
@@ -538,7 +541,7 @@ module traffic_generator
   						
   						,.v_o    (trace_v_o)
   						,.data_o (trace_data_o)
-  						,.yumi_i (trace_yumi_i)
+  						,.yumi_i (fifo_yumi_li)
   						);
 
 
