@@ -1,4 +1,3 @@
-
 package bsg_dmc_pearl_pkg;
 
   import bsg_tag_pkg::*;
@@ -14,5 +13,8 @@ package bsg_dmc_pearl_pkg;
   }  bsg_dmc_pearl_tag_lines_s;
   localparam bsg_dmc_pearl_tag_local_els_gp = $bits(bsg_dmc_pearl_tag_lines_s) / $bits(bsg_tag_s);
 
+  // The number of bits required to represent the max payload width
+  parameter tag_max_payload_width_gp = 8;
+  parameter tag_lg_max_payload_width_gp = `BSG_SAFE_CLOG2(tag_max_payload_width_gp + 1);
 endpackage
 

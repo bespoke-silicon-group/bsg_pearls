@@ -1,12 +1,13 @@
-
 `include "bsg_tag.vh"
 `include "bsg_dmc.vh"
+`include "bsg_defines.v"
+`include "bsg_clk_gen.vh"
 
 module bsg_dmc_pearl
  import bsg_tag_pkg::*;
  import bsg_dmc_pkg::*;
  import bsg_dmc_pearl_pkg::*;
- #(parameter `BSG_INV_PARAM(tag_els_p)
+ #(parameter tag_els_p = bsg_dmc_pearl_tag_local_els_gp
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
    , parameter `BSG_INV_PARAM(num_adgs_p)
    , parameter `BSG_INV_PARAM(ds_width_p)
@@ -128,9 +129,9 @@ module bsg_dmc_pearl
   bsg_dmc_xilinx_ui_trace_replay
    #(.data_width_p(ui_data_width_p)
      ,.addr_width_p(ui_addr_width_p)
-     ,.burst_len_p(ui_burst_len_p)
-     ,.tfifo_depth_p(trace_tfifo_depth_p)
-     ,.rfifo_depth_p(trace_rfifo_depth_p)
+     ,.burst_width_p(ui_burst_len_p)
+     ,.cmd_tfifo_depth_p(trace_tfifo_depth_p)
+     ,.cmd_rfifo_depth_p(trace_rfifo_depth_p)
      )
    trace_replay
     (.clk_i(ui_clk_i)
@@ -217,7 +218,7 @@ module bsg_dmc_pearl
      ,.refresh_in_progress_o(refresh_in_progress_o)
      ,.test_mode_o(test_mode_o)
 
-     ,.ext_dfi_clk_2x_i(ext_dfi_clk_2x_i)
+     ,.ext_dfi_clk_i(ext_dfi_clk_2x_i)
      ,.ddr_ck_p_o(ddr_ck_p_o)
      ,.ddr_ck_n_o(ddr_ck_n_o)
      ,.ddr_cke_o(ddr_cke_o)
