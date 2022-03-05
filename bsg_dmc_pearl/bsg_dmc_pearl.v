@@ -51,6 +51,8 @@ module bsg_dmc_pearl
 
     // Status signals
     , output logic                           calib_clk_monitor_o
+    , output logic                           calib_dqs_monitor_o
+    , output logic                           calib_dqs_dly_monitor_o
     , output logic                           init_calib_complete_o
     , output logic                           stall_transactions_o
     , output logic                           transaction_in_progress_o
@@ -172,6 +174,8 @@ module bsg_dmc_pearl
   logic [ui_data_width_p-1:0]      app_rd_data;
   logic                            app_rd_data_end;
 
+  logic [dq_group_lp-1:0] dqs_clk_lo, dqs_clk_dly_lo;
+
   bsg_dmc
    #(.num_adgs_p(num_adgs_p)
      ,.ui_addr_width_p(ui_addr_width_p)
@@ -211,6 +215,8 @@ module bsg_dmc_pearl
 
      ,.dfi_clk_2x_o(dfi_clk_2x_o)
      ,.dfi_clk_1x_o(dfi_clk_1x_o)
+     ,.dqs_clk_o(dqs_clk_lo)
+     ,.dqs_clk_dly_o(dqs_clk_dly_lo)
      ,.init_calib_complete_o (init_calib_complete_o)
      ,.stall_transactions_o(stall_transactions_o)
      ,.transaction_in_progress_o(transaction_in_progress_o)
@@ -312,14 +318,58 @@ module bsg_dmc_pearl
      ,.data_async_r_o(ds_tag_payload_r)
      );
 
+  logic [1:0] monitor_sel_r;
+  bsg_tag_client_unsync
+   #(.width_p(2))
+   btc_sel
+    (.bsg_tag_i(tag_lines_lo.monitor_sel)
+     ,.data_async_r_o(monitor_sel_r)
+     );
+
   bsg_counter_clock_downsample
    #(.width_p(ds_width_p), .harden_p(1))
-   ds
+   dfi_ds
     (.clk_i(dfi_clk_1x_o)
     ,.reset_i(ds_tag_payload_r.reset)
     ,.val_i(ds_tag_payload_r.val)
     ,.clk_r_o(calib_clk_monitor_o)
     );
+
+  logic dqs_sel_lo;
+  bsg_mux
+   #(.width_p(1), .els_p(4), .balanced_p(1), .harden_p(1))
+   dqs_mux
+    (.data_i(dqs_clk_lo)
+     ,.sel_i(monitor_sel_r)
+     ,.data_o(dqs_sel_lo)
+     );
+
+  bsg_counter_clock_downsample
+   #(.width_p(ds_width_p), .harden_p(1))
+   dqs_ds
+    (.clk_i(dqs_sel_lo)
+     ,.reset_i(ds_tag_payload_r.reset)
+     ,.val_i(ds_tag_payload_r.val)
+     ,.clk_r_o(calib_dqs_monitor_o)
+     );
+
+  logic dqs_dly_sel_lo;
+  bsg_mux
+   #(.width_p(1), .els_p(4), .balanced_p(1), .harden_p(1))
+   dqs_sel_mux
+    (.data_i(dqs_clk_dly_lo)
+     ,.sel_i(monitor_sel_r)
+     ,.data_o(dqs_dly_sel_lo)
+     );
+
+  bsg_counter_clock_downsample
+   #(.width_p(ds_width_p), .harden_p(1))
+   dqs_dly_ds
+    (.clk_i(dqs_dly_sel_lo)
+     ,.reset_i(ds_tag_payload_r.reset)
+     ,.val_i(ds_tag_payload_r.val)
+     ,.clk_r_o(calib_dqs_dly_monitor_o)
+     );
 
 endmodule
 
