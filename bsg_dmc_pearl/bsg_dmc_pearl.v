@@ -356,7 +356,7 @@ module bsg_dmc_pearl
   logic dqs_dly_sel_lo;
   bsg_mux
    #(.width_p(1), .els_p(4), .balanced_p(1), .harden_p(1))
-   dqs_sel_mux
+   dqs_dly_mux
     (.data_i(dqs_clk_dly_lo)
      ,.sel_i(monitor_sel_r)
      ,.data_o(dqs_dly_sel_lo)
