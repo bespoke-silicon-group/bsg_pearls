@@ -459,7 +459,10 @@ module traffic_generator
 
   	assign asic_link_downstream_core_yumi_lo = asic_link_downstream_core_valid_lo & dmc_input_fifo_ready_lo ;
 
-  	  // ASIC SIDE LINKS START
+    logic fifo_yumi_li;
+    assign fifo_yumi_li = trace_ready_i & trace_v_o;
+
+    // ASIC SIDE LINKS START
   	bsg_link_ddr_downstream
   					#(.width_p        (payload_width_lp)
   					 ,.channel_width_p(payload_width_lp/2)
@@ -469,9 +472,9 @@ module traffic_generator
   					 ,.core_link_reset_i(asic_link_reset_li)
   					 ,.io_link_reset_i  (asic_link_downstream_io_reset)
   					 
-  					 ,.core_data_o   (asic_link_downstream_core_data_lo)
-  					 ,.core_valid_o  (asic_link_downstream_core_valid_lo)
-  					 ,.core_yumi_i   (asic_link_downstream_core_yumi_lo)
+  					 ,.core_data_o   (trace_data_o)
+  					 ,.core_valid_o  (trace_v_o)
+  					 ,.core_yumi_i   (fifo_yumi_li)
   					
   					 ,.io_clk_i      (fpga_link_upstream_edge_clk_lo)
   					 ,.io_data_i     (fpga_link_upstream_edge_data_lo)
@@ -524,25 +527,23 @@ module traffic_generator
   	// ASIC SIDE LINKS END
 	assign dmc_adapter_yumi_lo = dmc_adapter_ready_lo & trace_ready_i;
   	
-    logic fifo_yumi_li;
-    assign fifo_yumi_li = trace_ready_i & trace_v_o;
 
 	// Trace packets going towards DMC
-  	bsg_fifo_1r1w_small 
-  						#(.width_p(payload_width_lp)
-  						,.els_p(10)
-  						) dmc_input_fifo
-  						(.clk_i  (ui_clk)
-  						,.reset_i(asic_link_reset_li)
-  						
-  						,.ready_o(dmc_input_fifo_ready_lo)
-  						,.data_i (asic_link_downstream_core_data_lo)
-  						,.v_i    (asic_link_downstream_core_valid_lo)
-  						
-  						,.v_o    (trace_v_o)
-  						,.data_o (trace_data_o)
-  						,.yumi_i (fifo_yumi_li)
-  						);
+  	//bsg_fifo_1r1w_small 
+  	//					#(.width_p(payload_width_lp)
+  	//					,.els_p(10)
+  	//					) dmc_input_fifo
+  	//					(.clk_i  (ui_clk)
+  	//					,.reset_i(asic_link_reset_li)
+  	//					
+  	//					,.ready_o(dmc_input_fifo_ready_lo)
+  	//					,.data_i (asic_link_downstream_core_data_lo)
+  	//					,.v_i    (asic_link_downstream_core_valid_lo)
+  	//					
+  	//					,.v_o    (trace_v_o)
+  	//					,.data_o (trace_data_o)
+  	//					,.yumi_i (fifo_yumi_li)
+  	//					);
 
 
 	initial begin

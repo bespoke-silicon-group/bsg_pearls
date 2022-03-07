@@ -239,7 +239,7 @@ module testbench();
     ,.trace_v_i             (trace_v_lo)
     
     ,.trace_data_o          (trace_data_li)
-    ,.trace_v_o             (trace_data_v_li)
+    ,.trace_v_o             (trace_v_li)
     ,.trace_yumi_i          (trace_yumi_lo)
 
     ,.calib_clk_monitor_o   (calib_clk_monitor_lo)
