@@ -22,11 +22,15 @@ ELABORATE_OPTIONS += +define+BSG_OSC_GRANULARITY=50
 ELABORATE_OPTIONS += -timescale=1ps/1ps
 ELABORATE_OPTIONS += -assert svaext
 #Enable below line for using non-synthesisable UVM TB
-#ELABORATE_OPTIONS += +define+NONSYNTH_TB
+ifndef synth_tb 
+	ELABORATE_OPTIONS += +define+NONSYNTH_TB
+endif
 ELABORATE_OPTIONS += +lint=TFIPC-L
 
 RUN_OPTIONS =
-#RUN_OPTIONS += +irritate_clk
+ifdef irritate_clk
+	RUN_OPTIONS += +irritate_clk
+endif
 
 BSG_TRACE_FILES := bsg_dmc_trace_rom.tr bsg_tag_boot_rom.tr
 BSG_TRACE_ROMS  := ${BSG_TRACE_FILES:.tr=_rom.v}
@@ -51,9 +55,6 @@ dve:
 clean:
 	rm -rf elaborate run
 	rm -rf *.log
-	#rm -rf bsg_dmc_trace_rom.tr
-	#rm -rf *_rom.v
-	#rm -rf *.vpd
 	rm -rf vc_hdrs.h
 	rm -rf simv*
 	rm -rf csrc
