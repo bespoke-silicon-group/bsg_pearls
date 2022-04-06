@@ -8,7 +8,7 @@ module bsg_dmc_pearl
  import bsg_dmc_pearl_pkg::*;
  #(parameter `BSG_INV_PARAM(tag_els_p)
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
-   , parameter `BSG_INV_PARAM(num_adgs_p)
+   , parameter `BSG_INV_PARAM(num_taps_p)
    , parameter `BSG_INV_PARAM(ds_width_p)
    , parameter `BSG_INV_PARAM(ui_addr_width_p)
    , parameter `BSG_INV_PARAM(ui_data_width_p)
@@ -177,7 +177,7 @@ module bsg_dmc_pearl
   logic [dq_group_lp-1:0] dqs_clk_lo, dqs_clk_dly_lo;
 
   bsg_dmc
-   #(.num_adgs_p(num_adgs_p)
+   #(.num_taps_p(num_taps_p)
      ,.ui_addr_width_p(ui_addr_width_p)
      ,.ui_data_width_p(ui_data_width_p)
      ,.burst_data_width_p(ui_burst_len_p*ui_data_width_p)
@@ -191,8 +191,6 @@ module bsg_dmc_pearl
      ,.sys_tag_lines_i(tag_lines_lo.sys)
      ,.osc_tag_lines_i(tag_lines_lo.osc)
 
-     ,.ui_clk_i(ui_clk_i)
-     ,.ui_clk_sync_rst_o(ui_reset_o)
      ,.app_addr_i(app_addr)
      ,.app_cmd_i(app_cmd)
      ,.app_en_i(app_en)
@@ -213,17 +211,12 @@ module bsg_dmc_pearl
      ,.app_sr_req_i('0)
      ,.app_sr_active_o()
 
-     ,.dfi_clk_2x_o(dfi_clk_2x_o)
-     ,.dfi_clk_1x_o(dfi_clk_1x_o)
-     ,.dqs_clk_o(dqs_clk_lo)
-     ,.dqs_clk_dly_o(dqs_clk_dly_lo)
      ,.init_calib_complete_o (init_calib_complete_o)
      ,.stall_transactions_o(stall_transactions_o)
      ,.transaction_in_progress_o(transaction_in_progress_o)
      ,.refresh_in_progress_o(refresh_in_progress_o)
      ,.test_mode_o(test_mode_o)
 
-     ,.ext_dfi_clk_2x_i(ext_dfi_clk_2x_i)
      ,.ddr_ck_p_o(ddr_ck_p_o)
      ,.ddr_ck_n_o(ddr_ck_n_o)
      ,.ddr_cke_o(ddr_cke_o)
@@ -250,6 +243,14 @@ module bsg_dmc_pearl
      ,.ddr_dq_o(ddr_dq_o)
      ,.ddr_dq_i(ddr_dq_i)
 
+     ,.ui_clk_i(ui_clk_i)
+
+     ,.ui_clk_sync_rst_o(ui_reset_o)
+     ,.ext_dfi_clk_2x_i(ext_dfi_clk_2x_i)
+     ,.dfi_clk_2x_o(dfi_clk_2x_o)
+     ,.dfi_clk_1x_o(dfi_clk_1x_o)
+     ,.dqs_clk_o(dqs_clk_lo)
+     ,.dqs_clk_dly_o(dqs_clk_dly_lo)
      ,.device_temp_o()
      );
 
