@@ -126,7 +126,7 @@ module traffic_generator
   // BSG Tag Trace Replay
   //
   localparam tag_trace_rom_addr_width_lp = 32;
-  localparam tag_trace_rom_data_width_lp = 23;
+  localparam tag_trace_rom_data_width_lp = 24;
 
   logic [tag_trace_rom_addr_width_lp-1:0] rom_addr_li;
   logic [tag_trace_rom_data_width_lp-1:0] rom_data_lo;
@@ -315,8 +315,8 @@ module traffic_generator
 
 	  initial begin
 	    $display("\n#### Regression test started ####");
-	    @(posedge tag_trace_done_lo);
-	    repeat(100) @(posedge ui_clk);
+	    @(posedge init_calib_complete_i);
+	    repeat(1000) @(posedge ui_clk);
 	    for(k=0;k<256;k++) begin
 	      waddr = k*dq_burst_length_lp;
 	      wdata = 0;
