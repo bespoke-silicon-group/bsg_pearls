@@ -32,6 +32,7 @@
 #    33  | Clkgen Downsampler                | 2-bits
 #    34  | Clkgen Select                     | 2 bits
 #
+#NOTE: ID=29, test_mode should be 0 for nonsynth and 1 for synthesisable testing. Check before testing
 #
 # Number of masters = 1
 # Number of clients = 29
@@ -166,7 +167,7 @@
 ################################################################################
 #
 # START CONFIGURATION
-#
+
 # The bsg tag network is now live! We can begin our configuration.
 #    25  | Clkgen Async Reset                 | 1-bit
 #    26  | Clkgen Oscillator                  | 5-bits
@@ -253,6 +254,11 @@
 0001___1___001001_1_0011___00000001
 0001___1___001001_1_0011___00000000
 
+
+# SEND en  id=29 d l=1     {test_mode}
+0001___1___011101_1_0001___00000000
+
+
 # Reset DMC configs and set dmc_p
 #SEND  en   id=10  d l=8    {trefi[7:0]}
 0001___1___001010_1_1000___11111111
@@ -297,8 +303,7 @@
 
 # SEND en  id=28 d l=1     {stall_transactions}
 0001___1___011100_1_0001___00000000
-# SEND en  id=29 d l=1     {test_mode}
-0001___1___011101_1_0001___00000000
+
 ################################################################################
 #
 # Done!

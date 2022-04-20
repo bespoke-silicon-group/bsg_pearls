@@ -74,7 +74,8 @@ $BASEJUMP_PATH/bsg_dataflow/bsg_round_robin_1_to_n.v
 
 bsg_dmc_trace_rom.v
 $BASEJUMP_PATH/bsg_dmc/bsg_dmc_xilinx_ui_trace_replay.v
-bsg_dmc_tester.v
+#NOTE: uncomment for synthesisable testing
+#bsg_dmc_tester.v
 $BASEJUMP_PATH/bsg_dmc/bsg_dmc_sys_cfg_gen.v
 
 bsg_tag_boot_rom.v
