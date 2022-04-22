@@ -6,8 +6,7 @@ module bsg_clk_gen_pearl_v3
  import bsg_tag_pkg::*;
  import bsg_clk_gen_pearl_pkg::*;
  #(parameter `BSG_INV_PARAM(ds_width_p)
-   , parameter `BSG_INV_PARAM(num_rows_p)
-   , parameter `BSG_INV_PARAM(num_cols_p)
+   , parameter `BSG_INV_PARAM(num_taps_p)
    , parameter `BSG_INV_PARAM(tag_els_p)
    , parameter `BSG_INV_PARAM(tag_lg_width_p)
    )
@@ -55,10 +54,9 @@ module bsg_clk_gen_pearl_v3
   wire [1:0] clk_select_n = async_output_disable_i ? 2'b11 : clk_select_lo;
 
   logic clk_lo;
-  bsg_clk_gen
+  bsg_clk_gen_v3
    #(.downsample_width_p(ds_width_p)
-     ,.num_rows_p(num_rows_p)
-     ,.num_cols_p(num_cols_p)
+     ,.num_taps_p(num_taps_p)
      ,.version_p(3)
      )
    clk_gen_inst
