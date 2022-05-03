@@ -1,4 +1,3 @@
-
 # PRO-TIP: Set editior syntax to bash (or sh)
 
 ################################################################################
@@ -31,6 +30,26 @@
 #    32  | Clkgen Osc Trigger                | 1-bit
 #    33  | Clkgen Downsampler                | 2-bits
 #    34  | Clkgen Select                     | 2 bits
+
+#---------------------+---------------+-------------------------------------------------------------------------------------
+# Parameter           | Width         |                       Clock period                                                  |
+#-----------+-------------+-------------------------------------------------------------------------------------------------
+#                                     |   7.5ns           |   5.4ns           |   6ns             |   5ns                   |   
+#-------------------------------------+-------------------+-------------------+-------------------+------------------------- 
+# trefi               | 16 bits       |   1023            |   1023            |   1023            |   1023     
+# tmrd                |               |   2               |   2               |   2               |   2
+# tcas                |               |   3               |   3               |   3               |   3
+# trtp                |               |          tcas + burst_length
+# trfc                |               |9(72ns/7.5ns)      |13(72ns/5.4ns      |11(72ns/6ns)       |14(72ns/4.8ns)
+# trc                 |               |8(67.5ns/7.5ns)    |10(58.2/5.4ns)     |9(60ns/6ns)        |11(55ns/4.8ns)
+# trp                 |               |2(22.5ns/7.5ns)    |2(16.2ns/5.4ns)    |2(18ns/6ns)        |2(14.4ns/4.8ns)
+# tras                |               |5(45ns/7.5ns)      |7(41.8/5.4)        |7(41.8/6)          |8(40/4.8)
+# trrd                |               |1(15ns/7.5ns)      |1(10.8/5.4)        |1(1ns/6ns)         |2(10/4.8)
+# trcd                |               |2(22.5ns/7.5ns)    |2(16.2/5.4)        |2(18ns/6ns)        |2(14/4.8)
+# twr                 |               |15/7.5 + burst_len |15/5.4 + burst_len |15/6 + burst_len   |14.4ns/4.8ns) + burst_len
+# twtr                |               |1 + burst_len      |2 + burst_len      |1+burst_len        |2 + burst_len
+
+
 #
 #NOTE: ID=29, test_mode should be 0 for nonsynth and 1 for synthesisable testing. Check before testing
 #
