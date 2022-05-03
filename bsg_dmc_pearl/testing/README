@@ -1,0 +1,28 @@
+Directory contains files for testing the DMC pearl RTL block.
+Testing involves:
+    - Trace generation: 
+        - Tag programming: bsg_tag_boot.tr
+        The above .tr file contains configuration parameters to be programmed. The above .tr file is converted to a SystemVerilog ROM module.
+        - Transfer programming: bsg_dmc_trace_gen.py
+        The above script generates Read/Write commands to be issued to DMC, along with data to be written/read data to be checked in a .tr format file. The .tr trace file can be converted to a SystemVerilog ROM module.
+        - Trace replay modules for tag and R/W operations
+    - Trace conversion and transfers to and from DMC: Data/Command to be written to the DMC is converted to Xilinx UI interface and propagated to the the DRAM controller.
+    - Clock monitoring: A clock monitor is used to continuously monitor the time period of a downsampled version of DDR clock. In case of a frequency mismatch due to PVT reasons, transfers are halted, time period is reset to correct value followed by resumed transfers.
+
+RUNNING TESTS:
+    - make bsg_tag_boot_rom.v
+        To generate bsg_tag_boot_rom.v from bsg_tag_boot_rom.tr
+    - make bsg_dmc_trace_rom.tr
+        To generate bsg_dmc_trace_rom.tr from bsg_dmc_trace_rom.py
+    - make bsg_dmc_trace_rom.v
+        To generate bsg_dmc_trace_rom.v from bsg_dmc_trace_rom.tr
+    - make elaborate synth_tb=1
+        To compile TB in synthesisable mode.
+    - make elaborate 
+        To compile TB in non-synthesisable mode; default mode.
+    - make run:
+        To run the simulation - execute the simv.
+    - make dve:
+        Launch DVE with vcdplus.vpd loaded for waveform debug
+
+More information on BSG DMC can be found at: https://docs.google.com/document/d/1C2FzUEnXPuUZyTnbTbHgSP3--3snQm0Xbs0B9PCVkls
