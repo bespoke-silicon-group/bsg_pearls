@@ -1,6 +1,6 @@
 
-`include "bsg_tag.vh"
-`include "bsg_dmc.vh"
+`include "bsg_tag.svh"
+`include "bsg_dmc.svh"
 
 module bsg_dmc_pearl
  import bsg_tag_pkg::*;
@@ -53,14 +53,14 @@ module bsg_dmc_pearl
     , output logic                           calib_clk_monitor_o
     , output logic                           calib_dqs_monitor_o
     , output logic                           calib_dqs_dly_monitor_o
-    , output logic                           init_calib_complete_o
-    , output logic                           stall_transactions_o
-    , output logic                           transaction_in_progress_o
-    , output logic                           refresh_in_progress_o
-    , output logic                           test_mode_o
+    , output logic                           dfi_init_calib_complete_o
+    , output logic                           dfi_stall_transactions_o
+    , output logic                           ui_transaction_in_progress_o
+    , output logic                           dfi_refresh_in_progress_o
+    , output logic                           dfi_test_mode_o
 
     // Trace-replay interface
-    , output logic                           trace_ready_o
+    , output logic                           trace_ready_and_o
     , input [trace_data_width_lp-1:0]        trace_data_i
     , input                                  trace_v_i
 
@@ -140,7 +140,7 @@ module bsg_dmc_pearl
 
      ,.data_i(trace_data_i)
      ,.v_i(trace_v_i)
-     ,.ready_o(trace_ready_o)
+     ,.ready_and_o(trace_ready_and_o)
 
      ,.data_o(trace_data_o)
      ,.v_o(trace_v_o)
@@ -211,11 +211,11 @@ module bsg_dmc_pearl
      ,.app_sr_req_i('0)
      ,.app_sr_active_o()
 
-     ,.init_calib_complete_o (init_calib_complete_o)
-     ,.stall_transactions_o(stall_transactions_o)
-     ,.transaction_in_progress_o(transaction_in_progress_o)
-     ,.refresh_in_progress_o(refresh_in_progress_o)
-     ,.test_mode_o(test_mode_o)
+     ,.dfi_init_calib_complete_o(dfi_init_calib_complete_o)
+     ,.ui_transaction_in_progress_o(ui_transaction_in_progress_o)
+     ,.dfi_stall_transactions_o(dfi_stall_transactions_o)
+     ,.dfi_refresh_in_progress_o(dfi_refresh_in_progress_o)
+     ,.dfi_test_mode_o(dfi_test_mode_o)
 
      ,.ddr_ck_p_o(ddr_ck_p_o)
      ,.ddr_ck_n_o(ddr_ck_n_o)
@@ -277,7 +277,7 @@ module bsg_dmc_pearl
       app_rd_data_o       = '0;
       app_rd_data_end_o   = '0;
 
-      if (test_mode_o)
+      if (dfi_test_mode_o)
         begin
           app_addr                = trace_app_addr;
           app_cmd                 = trace_app_cmd;

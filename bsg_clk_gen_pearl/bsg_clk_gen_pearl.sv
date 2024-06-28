@@ -1,8 +1,8 @@
 
-`include "bsg_defines.v"
-`include "bsg_clk_gen.vh"
+`include "bsg_defines.sv"
+`include "bsg_clk_gen.svh"
 
-module bsg_clk_gen_pearl_v3
+module bsg_clk_gen_pearl
  import bsg_tag_pkg::*;
  import bsg_clk_gen_pearl_pkg::*;
  #(parameter `BSG_INV_PARAM(ds_width_p)
