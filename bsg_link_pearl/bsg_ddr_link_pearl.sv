@@ -7,6 +7,7 @@ module bsg_ddr_link_pearl
  import bsg_noc_pkg::*;
  import bsg_link_pkg::*;
  import bsg_link_pearl_pkg::*;
+ import bsg_clk_gen_pearl_pkg::*;
  #(`BSG_INV_PARAM(tag_els_p)
    , `BSG_INV_PARAM(tag_lg_width_p)
    , `BSG_INV_PARAM(core_data_width_p)
@@ -69,7 +70,7 @@ module bsg_ddr_link_pearl
      ,.clk_monitor_o(io_clk_monitor_o)
      );
 
-  bsg_ddr_link_pearl_tag_lines_s tag_lines_lo;
+  bsg_link_ddr_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
      ,.local_els_p(tag_ddr_local_els_gp)
@@ -85,7 +86,7 @@ module bsg_ddr_link_pearl
   logic ddr_uplink_reset_li;
   bsg_tag_client
    #(.width_p(1))
-   btc_uplink_reset
+   btc_ddr_uplink_reset
     (.bsg_tag_i(tag_lines_lo.io_uplink_reset)
      ,.recv_clk_i(io_clk_lo)
      ,.recv_new_r_o()
@@ -105,7 +106,7 @@ module bsg_ddr_link_pearl
    #(.width_p(1))
    btc_downlink_reset
     (.bsg_tag_i(tag_lines_lo.core_downlink_reset)
-     ,.recv_clk_i(noc_clk_i)
+     ,.recv_clk_i(core_clk_i)
      ,.recv_new_r_o()
      ,.recv_data_r_o(core_downlink_reset_li)
      );
@@ -113,9 +114,9 @@ module bsg_ddr_link_pearl
   logic core_uplink_reset_li;
   bsg_tag_client
    #(.width_p(1))
-   btc_uplink_reset
+   btc_core_uplink_reset
     (.bsg_tag_i(tag_lines_lo.core_uplink_reset)
-     ,.recv_clk_i(noc_clk_i)
+     ,.recv_clk_i(core_clk_i)
      ,.recv_new_r_o()
      ,.recv_data_r_o(core_uplink_reset_li)
      );
@@ -128,7 +129,7 @@ module bsg_ddr_link_pearl
      ,.recv_clk_i(io_clk_lo)
      ,.recv_new_r_o()
      ,.recv_data_r_o(ddr_downlink_reset_unsync_li)
-     ,.)
+     );
 
   logic ddr_downlink_reset_li;
   bsg_sync_sync
@@ -149,12 +150,12 @@ module bsg_ddr_link_pearl
      ,.use_extra_data_bit_p(ddr_use_extra_data_bit_p)
      )
    uplink
-    (.core_clk_i(noc_clk_i)
+    (.core_clk_i(core_clk_i)
      ,.core_link_reset_i(core_uplink_reset_li)
 
-     ,.core_data_i(core_link_data_i)
-     ,.core_v_i(core_link_v_i)
-     ,.core_ready_and_o(core_link_ready_and_o)
+     ,.core_data_i(core_data_i)
+     ,.core_v_i(core_v_i)
+     ,.core_ready_and_o(core_ready_and_o)
 
      ,.io_clk_i(io_clk_lo)
      ,.io_link_reset_i(ddr_uplink_reset_li)
@@ -176,7 +177,7 @@ module bsg_ddr_link_pearl
      ,.use_extra_data_bit_p(ddr_use_extra_data_bit_p)
      )
    downlink
-    (.core_clk_i(noc_clk_i)
+    (.core_clk_i(core_clk_i)
      ,.core_link_reset_i(core_downlink_reset_li)
 
      ,.core_data_o(core_data_o)
