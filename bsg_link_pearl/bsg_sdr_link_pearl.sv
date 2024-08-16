@@ -44,7 +44,7 @@ module bsg_sdr_link_pearl
   bsg_sdr_link_pearl_tag_lines_s tag_lines_lo;
   bsg_tag_master_decentralized
    #(.els_p(tag_els_p)
-     ,.local_els_p(bsg_link_sdr_tag_local_els_gp)
+     ,.local_els_p(bsg_sdr_link_pearl_tag_local_els_gp)
      ,.lg_width_p(tag_lg_width_p)
      )
    btm
