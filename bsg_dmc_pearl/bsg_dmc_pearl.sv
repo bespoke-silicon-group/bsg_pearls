@@ -330,7 +330,7 @@ module bsg_dmc_pearl
   bsg_counter_clock_downsample
    #(.width_p(ds_width_p), .harden_p(1))
    dfi_ds
-    (.clk_i(dfi_clk_1x_o)
+    (.clk_i(dfi_clk_1x_lo)
     ,.reset_i(ds_tag_payload_r.reset)
     ,.val_i(ds_tag_payload_r.val)
     ,.clk_r_o(calib_clk_monitor_o)
