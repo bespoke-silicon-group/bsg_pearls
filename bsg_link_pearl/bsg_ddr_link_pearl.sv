@@ -18,8 +18,8 @@ module bsg_ddr_link_pearl
    , `BSG_INV_PARAM(ddr_lg_credit_to_token_decimation_p)
    , `BSG_INV_PARAM(ddr_use_extra_data_bit_p)
    )
-  (input                                                       clk_i
-   , input                                                     reset_i
+  (input                                                       core_clk_i
+   , input                                                     core_reset_i
 
    // Tag Interface
    , input                                                     tag_clk_i
@@ -107,7 +107,7 @@ module bsg_ddr_link_pearl
    #(.width_p(1))
    btc_downlink_reset
     (.bsg_tag_i(tag_lines_lo.core_downlink_reset)
-     ,.recv_clk_i(clk_i)
+     ,.recv_clk_i(core_clk_i)
      ,.recv_new_r_o()
      ,.recv_data_r_o(core_downlink_reset_li)
      );
@@ -117,7 +117,7 @@ module bsg_ddr_link_pearl
    #(.width_p(1))
    btc_core_uplink_reset
     (.bsg_tag_i(tag_lines_lo.core_uplink_reset)
-     ,.recv_clk_i(clk_i)
+     ,.recv_clk_i(core_clk_i)
      ,.recv_new_r_o()
      ,.recv_data_r_o(core_uplink_reset_li)
      );
@@ -151,7 +151,7 @@ module bsg_ddr_link_pearl
      ,.use_extra_data_bit_p(ddr_use_extra_data_bit_p)
      )
    uplink
-    (.core_clk_i(clk_i)
+    (.core_clk_i(core_clk_i)
      ,.core_link_reset_i(core_uplink_reset_li)
 
      ,.core_data_i(core_data_i)
@@ -178,7 +178,7 @@ module bsg_ddr_link_pearl
      ,.use_extra_data_bit_p(ddr_use_extra_data_bit_p)
      )
    downlink
-    (.core_clk_i(clk_i)
+    (.core_clk_i(core_clk_i)
      ,.core_link_reset_i(core_downlink_reset_li)
 
      ,.core_data_o(core_data_o)
