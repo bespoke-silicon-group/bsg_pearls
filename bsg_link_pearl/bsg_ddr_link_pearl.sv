@@ -38,15 +38,15 @@ module bsg_ddr_link_pearl
    , output logic                                              io_clk_monitor_o
    , input                                                     async_clk_output_disable_i
 
-   , output logic                                              io_link_clk_o
-   , output logic [io_data_width_p-1:0]                        io_link_data_o
-   , output logic                                              io_link_v_o
-   , input                                                     io_link_token_i
+   , output logic                                              link_clk_o
+   , output logic [io_data_width_p-1:0]                        link_data_o
+   , output logic                                              link_v_o
+   , input                                                     link_token_i
 
-   , input                                                     io_link_clk_i
-   , input [io_data_width_p-1:0]                               io_link_data_i
-   , input                                                     io_link_v_i
-   , output logic                                              io_link_token_o
+   , input                                                     link_clk_i
+   , input [io_data_width_p-1:0]                               link_data_i
+   , input                                                     link_v_i
+   , output logic                                              link_token_o
    );
 
   wire [`BSG_SAFE_CLOG2(tag_els_p)-1:0] clk_gen_tag_node_offset_li = tag_node_id_offset_i + '0;
@@ -136,13 +136,13 @@ module bsg_ddr_link_pearl
   bsg_sync_sync
    #(.width_p(1))
    bss
-    (.oclk_i(io_link_clk_i)
+    (.oclk_i(link_clk_i)
      ,.iclk_data_i(ddr_downlink_reset_unsync_li)
      ,.oclk_data_o(ddr_downlink_reset_li)
      );
 
-  logic [io_data_width_p-1:0] io_link_data_lo;
-  logic io_link_clk_lo, io_link_v_lo;
+  logic [io_data_width_p-1:0] link_data_lo;
+  logic link_clk_lo, link_v_lo, link_token_li;
   bsg_link_ddr_upstream
    #(.width_p(core_data_width_p)
      ,.channel_width_p(io_data_width_p)
@@ -162,14 +162,14 @@ module bsg_ddr_link_pearl
      ,.io_link_reset_i(ddr_uplink_reset_li)
      ,.async_token_reset_i(ddr_async_token_reset_li)
 
-     ,.io_clk_r_o(io_link_clk_lo)
-     ,.io_data_r_o(io_link_data_lo)
-     ,.io_v_r_o(io_link_v_lo)
-     ,.token_clk_i(io_link_token_i)
+     ,.io_clk_r_o(link_clk_lo)
+     ,.io_data_r_o(link_data_lo)
+     ,.io_v_r_o(link_v_lo)
+     ,.token_clk_i(link_token_li)
      );
 
-  logic [io_data_width_p-1:0] io_link_data_li;
-  logic io_link_clk_li, io_link_v_li;
+  logic [io_data_width_p-1:0] link_data_li;
+  logic link_clk_li, link_v_li, link_token_lo;
   bsg_link_ddr_downstream 
    #(.width_p(core_data_width_p)
      ,.channel_width_p(io_data_width_p)
@@ -187,27 +187,29 @@ module bsg_ddr_link_pearl
 
      ,.io_link_reset_i(ddr_downlink_reset_li)
 
-     ,.io_clk_i(io_link_clk_li)
-     ,.io_data_i(io_link_data_li)
-     ,.io_v_i(io_link_v_li)
-     ,.core_token_r_o(io_link_token_o)
+     ,.io_clk_i(link_clk_li)
+     ,.io_data_i(link_data_li)
+     ,.io_v_i(link_v_li)
+     ,.core_token_r_o(link_token_lo)
      );
 
   bsg_link_delay_line
    idelay
     (.tag_clk_i(tag_clk_i)
      ,.tag_lines_i(tag_lines_lo.idelay)
-     ,.i({io_link_clk_i, io_link_v_i, io_link_data_i})
-     ,.o({io_link_clk_li, io_link_v_li, io_link_data_li})
+     ,.i({link_clk_i, link_v_i, link_data_i})
+     ,.o({link_clk_li, link_v_li, link_data_li})
      );
+  assign link_token_li = link_token_i;
 
   bsg_link_delay_line
    odelay
     (.tag_clk_i(tag_clk_i)
      ,.tag_lines_i(tag_lines_lo.odelay)
-     ,.i({io_link_clk_lo, io_link_v_lo, io_link_data_lo})
-     ,.o({io_link_clk_o, io_link_v_o, io_link_data_o})
+     ,.i({link_clk_lo, link_v_lo, link_data_lo})
+     ,.o({link_clk_o, link_v_o, link_data_o})
      );
+  assign link_token_o = link_token_lo;
 
 endmodule
 

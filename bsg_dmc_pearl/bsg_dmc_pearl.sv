@@ -28,6 +28,7 @@ module bsg_dmc_pearl
    (input                                    ui_clk_i
     , output logic                           ui_reset_o
     , input                                  ext_dfi_clk_2x_i
+    , output logic                           dfi_clk_1x_o
 
     , input                                  tag_clk_i
     , input                                  tag_data_i
@@ -385,6 +386,7 @@ module bsg_dmc_pearl
      ,.clk_i(dfi_clk_1x_lo)
      ,.clk_monitor_o(dfi_clk_1x_monitor_o)
      );
+  assign dfi_clk_1x_o = dfi_clk_1x_lo;
 
 endmodule
 
