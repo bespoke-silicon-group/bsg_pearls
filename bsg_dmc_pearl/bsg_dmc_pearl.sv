@@ -29,7 +29,6 @@ module bsg_dmc_pearl
     , output logic                           ui_reset_o
     , input                                  ext_dfi_clk_2x_i
     , output logic                           dfi_clk_1x_o
-    , output logic                           dfi_clk_2x_o
 
     , input                                  tag_clk_i
     , input                                  tag_data_i
@@ -50,6 +49,8 @@ module bsg_dmc_pearl
     , output logic                           app_rd_data_end_o
 
     // Status signals
+    , output logic                           dfi_clk_1x_monitor_o
+    , output logic                           dfi_clk_2x_monitor_o
     , output logic                           calib_clk_monitor_o
     , output logic                           calib_dqs_monitor_o
     , output logic                           calib_dqs_dly_monitor_o
@@ -175,7 +176,7 @@ module bsg_dmc_pearl
   logic                            app_rd_data_end;
 
   logic [dq_group_lp-1:0] dqs_clk_lo, dqs_clk_dly_lo;
-
+  logic dfi_clk_1x_lo, dfi_clk_2x_lo;
   bsg_dmc
    #(.num_taps_p(num_taps_p)
      ,.ui_addr_width_p(ui_addr_width_p)
@@ -247,8 +248,8 @@ module bsg_dmc_pearl
 
      ,.ui_clk_sync_rst_o(ui_reset_o)
      ,.ext_dfi_clk_2x_i(ext_dfi_clk_2x_i)
-     ,.dfi_clk_2x_o(dfi_clk_2x_o)
-     ,.dfi_clk_1x_o(dfi_clk_1x_o)
+     ,.dfi_clk_2x_o(dfi_clk_2x_lo)
+     ,.dfi_clk_1x_o(dfi_clk_1x_lo)
      ,.dqs_clk_o(dqs_clk_lo)
      ,.dqs_clk_dly_o(dqs_clk_dly_lo)
      ,.device_temp_o()
@@ -330,7 +331,7 @@ module bsg_dmc_pearl
   bsg_counter_clock_downsample
    #(.width_p(ds_width_p), .harden_p(1))
    dfi_ds
-    (.clk_i(dfi_clk_1x_o)
+    (.clk_i(dfi_clk_1x_lo)
     ,.reset_i(ds_tag_payload_r.reset)
     ,.val_i(ds_tag_payload_r.val)
     ,.clk_r_o(calib_clk_monitor_o)
@@ -371,6 +372,21 @@ module bsg_dmc_pearl
      ,.val_i(ds_tag_payload_r.val)
      ,.clk_r_o(calib_dqs_dly_monitor_o)
      );
+
+  bsg_clk_gen_pearl_monitor
+   monitor_dfi_2x
+    (.bsg_tag_i(tag_lines_lo.monitor_reset)
+     ,.clk_i(dfi_clk_2x_lo)
+     ,.clk_monitor_o(dfi_clk_2x_monitor_o)
+     );
+
+  bsg_clk_gen_pearl_monitor
+   monitor_dfi_1x
+    (.bsg_tag_i(tag_lines_lo.monitor_reset)
+     ,.clk_i(dfi_clk_1x_lo)
+     ,.clk_monitor_o(dfi_clk_1x_monitor_o)
+     );
+  assign dfi_clk_1x_o = dfi_clk_1x_lo;
 
 endmodule
 

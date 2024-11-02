@@ -6,6 +6,7 @@ package bsg_dmc_pearl_pkg;
 
   typedef struct packed
   {
+    bsg_tag_s                     monitor_reset;
     bsg_tag_s                     monitor_sel;
     bsg_tag_s                     monitor_ds;
     bsg_dmc_osc_tag_lines_s       osc;
