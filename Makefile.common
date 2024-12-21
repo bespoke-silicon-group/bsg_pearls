@@ -1,0 +1,125 @@
+
+# External dependencies
+TOP ?= $(shell git rev-parse --show-toplevel)
+ifeq (,$(wildcard $(TOP)))
+	$(error TOP: $(TOP) not found)
+endif
+
+BASEJUMP_STL_DIR ?= $(TOP)/../basejump_stl
+ifeq (,$(wildcard $(BASEJUMP_STL_DIR)))
+	$(error BASEJUMP_STL_DIR: $(BASEJUMP_STL_DIR) not found)
+endif
+
+BSG_CADENV_DIR ?= $(TOP)/../bsg_cadenv
+ifeq (,$(wildcard $(BSG_CADENV_DIR)))
+	$(info BSG_CADENV_DIR: $(BSG_CADENV_DIR) not found)
+else
+	include $(BSG_CADENV_DIR)/cadenv.mk
+endif
+
+# Searches up a dir tree for a specified matchfile
+# ex: bsg_fn_find_dir_width .BSG_DESIGN
+#   -> ../../
+# Credit to stdavids
+bsg_fn_find_dir_with = $(shell /usr/bin/perl -e 'chomp($$_ = `pwd`); while ($$_ ne "" && ! -e "$$_/$(1)") { m:(.*)/[^/]+/??:; $$_ = $$1; } print;')
+
+# Creates a standard directory tree at root
+# ex: bsg_fn_create_subdirs BSG_PEARLS, TOP
+#   -> BSG_PEARLS_MK_DIR := $(TOP)/mk
+define bsg_fn_create_subdirs
+	$(eval root_var := $(1))
+	$(eval root_dir := $(2))
+	$(eval $(root_var)_MK_DIR  := $(root_dir)/mk)
+	$(eval $(root_var)_PY_DIR  := $(root_dir)/py)
+	$(eval $(root_var)_SRC_DIR := $(root_dir)/v)
+	$(eval $(root_var)_TCL_DIR := $(root_dir)/tcl)
+	$(eval $(root_var)_TEST_DIR      := $(root_dir)/test)
+	$(eval $(root_var)_TEST_MK_DIR   := $(root_dir)/test/mk)
+	$(eval $(root_var)_TEST_PY_DIR   := $(root_dir)/test/py)
+	$(eval $(root_var)_TEST_SRC_DIR  := $(root_dir)/test/v)
+	$(eval $(root_var)_TEST_TCL_DIR  := $(root_dir)/test/tcl)
+	$(eval $(root_var)_YOSYS_DIR     := $(root_dir)/test/yosys)
+	$(eval $(root_var)_VCS_DIR       := $(root_dir)/test/vcs)
+	$(eval $(root_var)_VERILATOR_DIR := $(root_dir)/test/verilator)
+endef
+
+define bsg_fn_upper
+$(shell echo $(1) | tr a-z A-Z)
+endef
+define bsg_fn_lower
+$(shell echo $(1) | tr A-Z a-z)
+endef
+bsg_var_blank :=
+define bsg_var_newline
+
+$(bsg_var_blank)
+endef
+
+bsg_var_percent := %
+
+bsg_var_tab := $(bsg_var_blank)	$(bsg_var_blank)
+bsg_var_space := $(bsg_var_blank) $(bsg_var_blank)
+
+# Define bsg_pearl IP toplevels
+BSG_PEARLS_DIR := $(TOP)
+BSG_DESIGN_DIR := $(call bsg_fn_find_dir_with,.BSG_DESIGN)
+BSG_DESIGN := $(shell cat $(BSG_DESIGN_DIR)/.BSG_DESIGN)
+
+BSG_CLK_GEN_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_clk_gen_pearl
+BSG_SDR_LINK_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_sdr_link_pearl
+BSG_DDR_LINK_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_ddr_link_pearl
+BSG_DMC_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_dmc_pearl
+
+# Other directories
+BASEJUMP_STL_HARD_DIR ?= $(BASEJUMP_STL_DIR)/hard/sky_130
+
+# Create the subdirectory structure
+$(eval $(call bsg_fn_create_subdirs,BSG_PEARLS,$(BSG_PEARLS_DIR)))
+$(eval $(call bsg_fn_create_subdirs,BSG_DESIGN,$(BSG_DESIGN_DIR)))
+$(eval $(call bsg_fn_create_subdirs,BSG_CLK_GEN_PEARL,$(BSG_CLK_GEN_PEARL_DIR)))
+$(eval $(call bsg_fn_create_subdirs,BSG_DMC_PEARL,$(BSG_DMC_PEARL_DIR)))
+$(eval $(call bsg_fn_create_subdirs,BSG_LINK_PEARL,$(BSG_LINK_PEARL_DIR)))
+
+# Basic bash commands
+SHELL := /bin/bash
+CD ?= cd
+CP ?= cp
+CAT ?= cat
+COLUMN ?= column
+DC_SHELL ?= dc_shell
+DVE ?= dve
+ECHO ?= echo
+EGREP ?= egrep
+GENUS ?= genus
+GREP ?= grep
+GTKWAVE ?= gtkwave
+IVERILOG ?= iverilog
+LC_SHELL ?= lc_shell
+MKDIR ?= mkdir
+OSTA ?= sta
+PYTHON ?= python
+RMRF ?= rm -rf
+SURELOG ?= surelog
+SURFER ?= surfer
+TCLSH ?= tclsh
+TEE ?= tee
+VCS ?= vcs
+VERDI ?= verdi
+VERILATOR ?= verilator
+VVP ?= vvp
+VLOGAN ?= vlogan
+YOSYS ?= yosys
+
+# Global help target
+.DEFAULT_GOAL: help
+.PHONY: help
+help: ## prints this message
+	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
+
+clean:: # Clean base target, appended by each tool
+clean::
+	@$(RMRF) *.log
+	@$(RMRF) *.tr
+	@$(RMRF) *.txt
+

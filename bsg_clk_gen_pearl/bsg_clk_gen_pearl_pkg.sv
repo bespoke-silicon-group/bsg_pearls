@@ -1,6 +1,15 @@
+
 package bsg_clk_gen_pearl_pkg;
 
   import bsg_tag_pkg::*;
+
+  typedef enum logic [1:0]
+  {
+    e_bsg_clk_gen_pearl_sel_osc  = 0
+    ,e_bsg_clk_gen_pearl_sel_ds  = 1
+    ,e_bsg_clk_gen_pearl_sel_ext = 2
+    ,e_bsg_clk_gen_pearl_sel_disable = 3
+  } bsg_clk_gen_pearl_sel_e;
 
   typedef struct packed
   {

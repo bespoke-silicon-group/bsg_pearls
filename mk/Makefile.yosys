@@ -1,0 +1,41 @@
+# Exporting to TCL scripts
+export TOOL := YOSYS
+export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
+export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
+export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
+
+YOSYS_OPTS += -m slang
+VDEFINES += YOSYS
+
+SYNTH_SCRIPT ?= $(BSG_PEARLS_TCL_DIR)/synthesis.yosys.tcl
+synth: ## Runs synthesis
+synth: $(BUILD_SOURCES)
+synth: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := synth.log)
+	@$(eval export BSG_LOG_LEVEL := 1)
+	@$(ECHO) "Running synthesis" > $(LOGFILE)
+	@$(YOSYS) $(YOSYS_OPTS) -p "tcl $(SYNTH_SCRIPT)" \
+		|& $(TEE) -a $(LOGFILE)
+
+synth.debug: ## Runs synthesis with debug logging enabled
+synth.debug: $(BUILD_SOURCES)
+synth.debug: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := synth.debug.log)
+	@$(eval export BSG_LOG_LEVEL := 3)
+	@$(ECHO) "Running debug synthesis" > $(LOGFILE)
+	@$(YOSYS) $(YOSYS_OPTS) -p "tcl $(SYNTH_SCRIPT)" \
+		-p "shell" \
+		|& $(TEE) -a $(LOGFILE)
+
+clean::
+	@$(RMRF) *.stats.json
+	@$(RMRF) *.checks.txt
+	@$(RMRF) *.blif
+	@$(RMRF) *.elab.v
+	@$(RMRF) *.gen.v
+	@$(RMRF) *.opt.v
+	@$(RMRF) *.tech.v
+	@$(RMRF) *.final.v
+	@$(RMRF) *.wrapper.v
+	@$(RMRF) $(DESIGN_SETUP_TCL)
+

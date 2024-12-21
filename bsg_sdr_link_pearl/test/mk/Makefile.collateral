@@ -1,0 +1,14 @@
+
+RUN_SOURCES += bsg_chip_pkg.h
+bsg_chip_pkg.h: %.h: $(BSG_DESIGN_PY_DIR)/%.py
+	PYTHONPATH=$(<D) \
+		$(PYTHON) -c "from bsg_chip_pkg import BsgSdrLinkPearlPkg; print(BsgSdrLinkPearlPkg().get_cheader())" \
+	> $@
+
+$(RUN_SOURCES): %.tr : $(BSG_DESIGN_TEST_PY_DIR)/%.py
+	@$(PYTHON) $< > $@
+
+clean::
+	@$(RMRF) *.tr
+	@$(RMRF) bsg_chip_pkg.h
+

@@ -1,0 +1,28 @@
+
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_sync_sync.sv
+
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_parallel_in_serial_out.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_two_fifo.sv
+
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_counter_clear_up.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff_en.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff_reset.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff_reset_en.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_mux.sv
+
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1r1w.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1r1w_synth.sv
+
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_master_decentralized.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_trace_replay.sv
+
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_trace_replay.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv
+TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv
+
+TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_nonsynth_test_rom_plusargs.sv
+TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_chip_tester.sv
+TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/testbench.sv
+

@@ -1,0 +1,53 @@
+
+TCL_COLLATERAL := $(filter %.tcl,$(BUILD_SOURCES) $(RUN_SOURCES))
+PKG_COLLATERAL := $(filter %_pkg.sv,$(BUILD_SOURCES) $(RUN_SOURCES))
+SVH_COLLATERAL := $(filter %.svh,$(BUILD_SOURCES) $(RUN_SOURCES))
+HPP_COLLATERAL := $(filter %.hpp,$(BUILD_SOURCES) $(RUN_SOURCES))
+TR_COLLATERAL  := $(filter %.tr,$(BUILD_SOURCES) $(RUN_SOURCES))
+
+$(TCL_COLLATERAL) : %.tcl : $(BSG_DESIGN_PY_DIR)/bsg_chip_pkg.py
+	@PYTHONPATH=$(<D) \
+		$(PYTHON) -c "from bsg_chip_pkg import BsgClkGenPearlPkg; print(BsgClkGenPearlPkg().get_tcl())" \
+	> $@
+$(PKG_COLLATERAL) : %.sv : $(BSG_DESIGN_PY_DIR)/bsg_chip_pkg.py
+	@PYTHONPATH=$(<D) \
+		$(PYTHON) -c "from bsg_chip_pkg import BsgClkGenPearlPkg; print(BsgClkGenPearlPkg().get_pkg())" \
+	> $@
+$(SVH_COLLATERAL) : %.svh : $(BSG_DESIGN_PY_DIR)/bsg_chip_pkg.py
+	@PYTHONPATH=$(<D) \
+		$(PYTHON) -c "from bsg_chip_pkg import BsgClkGenPearlPkg; print(BsgClkGenPearlPkg().get_svheader())" \
+	> $@
+$(HPP_COLLATERAL) : %.hpp : $(BSG_DESIGN_PY_DIR)/bsg_chip_pkg.py
+	@PYTHONPATH=$(<D) \
+		$(PYTHON) -c "from bsg_chip_pkg import BsgClkGenPearlPkg; print(BsgClkGenPearlPkg().get_cheader())" \
+	> $@
+$(TR_COLLATERAL) : %.tr : $(BSG_DESIGN_TEST_PY_DIR)/%.py
+	@PYTHONPATH=$(<D) $(PYTHON) $< > $@
+
+RESULTS_DIR := $(CURDIR)/results
+RESULTS_DETAILS_RPT := $(RESULTS_DIR)/typical.log
+RESULTS_CSV_SCRIPT := $(BSG_DESIGN_TEST_PY_DIR)/output_csv.py
+RESULTS_CSV := $(RESULTS_DIR)/summarize.csv
+RESULTS_PNG := $(RESULTS_DIR)/summarize.png
+
+summarize: ## quick summary of the clock edges observed
+	@$(GREP) -o -E ".*NEGEDGE.*[0-9]+\s+ps" $(RUN_LOG) | $(GREP) -o -E "[0-9]+\s+ps" | $(GREP) -o -E "[0-9]+" | $(COLUMN) -c 100
+	@$(GREP) -o -E ".*POSEDGE.*[0-9]+\s+ps" $(RUN_LOG) | $(GREP) -o -E "[0-9]+\s+ps" | $(GREP) -o -E "[0-9]+" | $(COLUMN) -c 100
+
+plot: ## plots duty cycle and period of the simulation
+plot: $(RESULTS_CSV) $(RESULTS_PNG)
+
+$(RESULTS_DIR):
+	@$(MKDIR) -p $@
+
+$(RESULTS_DETAILS_RPT): $(RESULTS_DIR)
+	@$(GREP) -o -E -n ".*NEGEDGE.*[0-9]+\s+ps" $(RUN_LOG)  > $@
+	@$(GREP) -o -E -n ".*POSEDGE.*[0-9]+\s+ps" $(RUN_LOG) >> $@
+
+$(RESULTS_CSV) $(RESULTS_PNG): $(RESULTS_CSV_SCRIPT) $(RESULTS_DETAILS_RPT)
+	@$(PYTHON) $< --logpath=$(RESULTS_DIR) > $@
+
+clean::
+	@$(RMRF) $(BUILD_SOURCES)
+	@$(RMRF) $(RUN_SOURCES)
+

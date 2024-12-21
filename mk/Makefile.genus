@@ -1,0 +1,32 @@
+# Exporting to TCL scripts
+export TOOL := GENUS
+export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
+export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
+export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
+
+GENUS_OPTS += -no_gui
+GENUS_OPTS += -wait 120
+
+SYNTH_SCRIPT ?= $(BSG_PEARLS_TCL_DIR)/synthesis.genus.tcl
+synth: ## Runs synthesis
+synth: $(BUILD_SOURCES)
+synth: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := synth.log)
+	@$(eval export BSG_LOG_LEVEL := 2)
+	@$(ECHO) "Running synthesis" > $(LOGFILE)
+	@$(GENUS) $(GENUS_OPTS) -files $(SYNTH_SCRIPT) \
+		|& $(TEE) -a $(LOGFILE)
+
+synth.debug: ## Runs synthesis with debug logging enabled
+synth.debug: $(BUILD_SOURCES)
+synth.debug: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := synth.debug.log)
+	@$(eval export BSG_LOG_LEVEL := 2)
+	@$(ECHO) "Running debug synthesis" > $(LOGFILE)
+	@$(GENUS) $(GENUS_OPTS) -files $(SYNTH_SCRIPT) \
+		|& $(TEE) -a $(LOGFILE)
+
+clean::
+	@$(RMRF) WORK/
+	@$(RMRF) alib-*/
+

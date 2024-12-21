@@ -1,0 +1,38 @@
+# Exporting to TCL scripts
+export TOOL := DC
+export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
+export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
+export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
+
+DC_OPTS += -64bit
+
+SYNTH_SCRIPT ?= $(BSG_PEARLS_TCL_DIR)/synthesis.dc.tcl
+synth: ## Runs synthesis
+synth: $(BUILD_SOURCES)
+synth: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := synth.log)
+	@$(eval export BSG_LOG_LEVEL := 2)
+	@$(ECHO) "Running synthesis" > $(LOGFILE)
+	@$(DC_SHELL) $(DC_OPTS) -x "source -verbose -echo $(SYNTH_SCRIPT); exit" \
+		|& $(TEE) -a $(LOGFILE)
+
+synth.debug: ## Runs synthesis with debug logging enabled
+synth.debug: $(BUILD_SOURCES)
+synth.debug: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := synth.debug.log)
+	@$(eval export BSG_LOG_LEVEL := 3)
+	@$(ECHO) "Running debug synthesis" > $(LOGFILE)
+	@$(DC_SHELL) $(DC_OPTS) -x "source -verbose -echo $(SYNTH_SCRIPT);" \
+		|& $(TEE) -a $(LOGFILE)
+
+clean::
+	@$(RMRF) WORK/
+	@$(RMRF) alib-*/
+	@$(RMRF) *.rpt
+	@$(RMRF) *.svf
+	@$(RMRF) *.elab.v
+	@$(RMRF) *.gen.v
+	@$(RMRF) *.opt.v
+	@$(RMRF) *.tech.v
+	@$(RMRF) *.final.v
+

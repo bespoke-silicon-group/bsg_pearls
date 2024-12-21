@@ -1,0 +1,40 @@
+# Exporting to TCL scripts
+export TOOL := opensta
+export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
+export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
+export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
+
+OSTA_OPTS += -threads max
+
+TIMING_SCRIPT ?= $(BSG_PEARLS_TCL_DIR)/timing.opensta.tcl
+time: ## time the design using OpenSTA
+time: $(BUILD_SOURCES)
+time: $(TIMING_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := timing.log)
+	@$(eval export BSG_LOG_LEVEL := 2)
+	@$(ECHO) "Running sta" > $(LOGFILE)
+	@$(OSTA) $(OSTA_OPTS) $(TIMING_SCRIPT) \
+		|& $(TEE) -a $(LOGFILE)
+
+time.debug: ## time the design using OpenSTA
+time.debug: $(BUILD_SOURCES)
+time.debug: $(TIMING_SCRIPT) $(DESIGN_SETUP_TCL)
+	@$(eval LOGFILE := timing.debug.log)
+	@$(eval export BSG_LOG_LEVEL := 3)
+	@$(ECHO) "Running debug sta" > $(LOGFILE)
+	@$(OSTA) $(OSTA_OPTS) $(TIMING_SCRIPT) \
+		|& $(TEE) -a $(LOGFILE)
+
+TEMP_NETLIST ?= .netlist.v
+$(DESIGN_SETUP_TCL):: $(BSG_CHIP_PKG_TCL) $(VSOURCES) $(HARD_VSOURCES) $(HARD_NSOURCES)
+	@$(ECHO) "set ::env(TOP_MODULE) $(TOP_MODULE)" >> $@
+	@$(ECHO) "set ::env(SYN_NETLIST) $(SYN_NETLIST)" >> $@
+	@$(ECHO) "set ::env(TEMP_NETLIST) $(TEMP_NETLIST)" >> $@
+
+clean::
+	@$(RMRF) *.rpt
+	@$(RMRF) *.lib
+	@$(RMRF) *.sdc
+	@$(RMRF) *.sdc.gz
+	@$(RMRF) $(TEMP_NETLIST)
+

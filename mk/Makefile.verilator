@@ -1,0 +1,141 @@
+# Exporting to TCL scripts
+export TOOL := VERILATOR
+
+TESTBENCH := testbench
+WRAPPER := bsg_chip
+
+VDEFINES += FUNCTIONAL
+VDEFINES += UNIT_DELAY=#1ps
+
+#VV_OPTS += --main --exe --timing
+VV_OPTS += --timescale-override 1ps/1ps
+VV_OPTS += -Wno-WIDTHEXPAND
+VV_OPTS += -Wno-UNOPTFLAT
+# Part of synth flow
+VV_OPTS += -Wno-MODDUP
+VV_OPTS += -Wno-REDEFMACRO
+VV_OPTS += -Wno-PINMISSING
+VV_OPTS += -Wno-COMBDLY
+VV_OPTS += -Wno-LATCH
+#VV_OPTS += --top-module $(TESTBENCH)
+VV_OPTS += $(addprefix +incdir+,$(VINCLUDES))
+VV_OPTS += $(addprefix +define+,$(VDEFINES))
+VV_OPTS += $(addprefix +incdir+,$(TEST_VINCLUDES))
+VV_OPTS += $(addprefix +define+,$(TEST_VDEFINES))
+# Grab any verilator command files
+VV_OPTS += $(CONFIG_VLT)
+VV_OPTS += -o simsc
+
+ifeq ($(TRACE),1)
+VV_OPTS += --trace
+VV_OPTS += --trace-structs
+VV_OPTS += --trace-fst
+TEST_VDEFINES += TRACE_ENABLE
+endif
+
+# Could generate, but there's not too many here
+SIM_LIBRARIES := pdk vpkg vlog hard syn
+SIM_CORNERS   := vlog hard syn-elab syn-gen syn-opt syn-tech syn-final
+
+CONFIG_VLT ?= default.vlt
+$(CONFIG_VLT):
+	@$(ECHO) "\`verilator_config" >> $@
+	@$(ECHO) "// Disable linting on yosys simulation libraries" >> $@
+	@$(ECHO) "lint_off -file \"*/simlib.v\"" >> $@
+
+# Verilator doesn't support verilog 2001 constructs, so we do a workaround by having
+#   a strict priority and selecting the files manually.
+# Unfortunately, this means that testbench modules must be "hardened", but short of
+#   multi-step verilation, this is still the best way I know...
+
+# Dependencies for each set of sources
+compile-vlog.log: $(VPKG) $(VSOURCES) $(TEST_VSOURCES)
+compile-hard.log: $(VPKG) $(PDK_VSOURCES) $(HARD_NSOURCES) $(HARD_VSOURCES) $(VSOURCES) $(TEST_VSOURCES)
+compile-syn-elab.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
+compile-syn-gen.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
+compile-syn-opt.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
+compile-syn-tech.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
+compile-syn-final.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
+
+#compile-%: ## compiles simulation libraries
+#COMPILE_TGT := $(foreach c,$(SIM_CORNERS),compile-$(c))
+#$(COMPILE_TGT): $(BUILD_SOURCES)
+#$(COMPILE_TGT): compile-%: compile-%.log
+#compile-%.log: $(CONFIG_VLT)
+#	@$(eval RAW_CORNER := $*)
+#	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
+#	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
+#	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
+#	@$(eval VV_OPTS += +define+BSG_CHIP_DUT_NAME=$(DUT_NAME))
+#	@$(ECHO) "Compiling $*" > $@
+#	@$(VERILATOR) $(VV_OPTS) $(filter-out $<,$^) -Mdir obj_dir-$* -o simsc |& $(TEE) -a $@
+
+
+dut-compile: $(VPKG) $(VSOURCES)
+dut-compile: $(CONFIG_VLT)
+	@$(eval RAW_CORNER := vlog)
+	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
+	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
+	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
+	@$(eval VV_OPTS += --cc --build --timing)
+	@$(eval VV_OPTS += --top-module $(DUT_NAME))
+	@$(eval VV_OPTS += --prefix $(DUT_NAME)_vlog)
+	@$(eval VV_OPTS += -Mdir obj_dir-dut)
+	$(VERILATOR) --verilate-jobs 32 $(VV_OPTS) $(VPKG) $(VSOURCES) $<
+
+testbench-compile:
+	@$(eval RAW_CORNER := vlog)
+	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
+	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
+	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
+	@$(eval VV_OPTS += +define+BSG_CHIP_DUT_NAME=$(DUT_NAME)_vlog)
+	@$(eval VV_OPTS += --cc --build --timing)
+	@$(eval VV_OPTS += --top-module testbench)
+	@$(eval VV_OPTS += -Mdir obj_dir-testbench)
+	echo "$(DUT_NAME) is $(DUT_NAME)"
+	$(VERILATOR) \
+		--verilate-jobs 32 $(VV_OPTS) $(VPKG) $(TEST_VSOURCES) $(CURDIR)/obj_dir-dut/libbsg_chip_vlog.a
+
+# Dependencies for each set of sources
+build-vlog.log     : compile-vlog
+build-hard.log     : compile-hard
+build-syn-elab.log : compile-syn-elab
+build-syn-gen.log  : compile-syn-gen
+build-syn-opt.log  : compile-syn-opt
+build-syn-tech.log : compile-syn-tech
+build-syn-final.log: compile-syn-final
+build-%: ## builds a simulation (build-<CORNER>) for individual corner
+BUILD_TGT := $(foreach c,$(SIM_CORNERS),build-$(c))
+$(BUILD_TGT): $(BUILD_SOURCES)
+$(BUILD_TGT): build-%: build-%.log
+build-%.log:
+	@$(ECHO) "Building verilator model" > $@
+	@$(MAKE) -C obj_dir-$* -f V$(TESTBENCH).mk |& $(TEE) -a $@
+
+VV_RUN_OPTS +=
+
+run-%: ## runs a simulation (run-<CORNER>) for individual corner
+RUN_TGT := $(foreach c,$(SIM_CORNERS),run-$(c))
+$(RUN_TGT): $(RUN_SOURCES)
+$(RUN_TGT): run-%: run-%.log
+run-%.log: build-%.log
+	@$(eval RAW_CORNER := $*)
+	@$(eval SIMSC_BIN := obj_dir-$(RAW_CORNER)/simsc)
+	@$(eval RUN_ARGS += +bsg_trace=dump-$*.fst)
+	@$(ECHO) "Running simulation with $(RUN_ARGS)" > $@
+	@./$(SIMSC_BIN) $(VV_RUN_OPTS) $(RUN_ARGS) |& $(TEE) -a $@
+
+VIEW_TGT := $(foreach c,$(SIM_CORNERS),view-$(c))
+view-%: ## opens a .fst dump in Surfer
+$(VIEW_TGT): view-%: dump-%.fst
+ifeq ($(ENABLE_SURFER),1)
+	@$(SURFER) $<
+else
+	@$(GTKWAVE) -f $<
+endif
+
+clean::
+	@$(RMRF) obj_dir-*/
+	@$(RMRF) $(CONFIG_VLT)
+	@$(RMRF) *.fst *.fst.hier
+

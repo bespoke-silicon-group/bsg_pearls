@@ -1,0 +1,15 @@
+// DESCRIPTION: Verilator output: Waivers generated with --waiver-output
+
+`verilator_config
+
+// Below you find suggested waivers. You have three options:
+//   1. Fix the reason for the linter warning
+//   2. Keep the waiver permanently if you are sure this is okay
+//   3. Keep the waiver temporarily to suppress the output
+
+lint_off -rule WIDTHTRUNC -file "*/home/petrisko/scratch/pearls_explore/bsg_pearls/../basejump_stl/bsg_async/bsg_async_credit_counter.sv" -match "Operator ASSIGNDLY expects 3 bits on the Assign RHS, but Assign RHS's REPLICATE generates 32 bits."
+
+lint_off -rule WIDTHTRUNC -file "*/home/petrisko/scratch/pearls_explore/bsg_pearls/../basejump_stl/bsg_async/bsg_async_credit_counter.sv" -match "Operator ASSIGNDLY expects 3 bits on the Assign RHS, but Assign RHS's REPLICATE generates 32 bits."
+
+lint_off -rule UNOPTFLAT -file "*/home/petrisko/scratch/pearls_explore/bsg_pearls/../basejump_stl/bsg_misc/bsg_scan.sv" -match "Signal unoptimizable: Circular combinational logic: 'testbench.dut.chip.sdr.uplink.sso.pos_credit_ctr.bsg_g2b.scan_xor.t'"
+

@@ -1,0 +1,84 @@
+Cadence Genus(TM) Synthesis Solution.
+Copyright 2022 Cadence Design Systems, Inc. All rights reserved worldwide.
+Cadence and the Cadence logo are registered trademarks and Genus is a trademark
+of Cadence Design Systems, Inc. in the United States and other countries.
+
+[00:58:40.248203] Configured Lic search path (20.02-s004): 27020@kk9.cs.washington.edu:27007@mentorls.s.uw.edu:27006@cadencels.s.uw.edu
+
+Version: 21.12-s068_1, built Fri Mar 04 14:12:46 PST 2022
+Options: -help 
+Date:    Sun Feb 16 00:58:40 2025
+Host:    kk9.cs.washington.edu (x86_64 w/Linux 4.19.53) (18cores*144cpus*4physical cpus*Intel(R) Xeon(R) Gold 6254 CPU @ 3.10GHz 25344KB) (791207952KB)
+PID:     116441
+OS:      CentOS Linux release 7.9.2009 (Core)
+
+*** Stack limited to 14 MB. This run may fail due to lack of stack space. ***
+
+
+
+***********************************************************************************************************
+***********************************************************************************************************
+
+
+
+Loading tool scripts...
+Finished loading tool scripts (7 seconds elapsed).
+Cadence Genus(TM) Synthesis Solution.
+Copyright 2022 Cadence Design Systems, Inc. All rights reserved worldwide.
+Cadence and the Cadence logo are registered trademarks and Genus is a trademark
+of Cadence Design Systems, Inc. in the United States and other countries.
+
+Usage: genus [-abort_on_error] [-batch] [-del_scale 10] [-disable_user_startup] [-execute 
+          <string>]+ [-files <string>]+ [-help] [-legacy_gui] [-legacy_ui] [-lic_stack <integer>] 
+          [-lic_startup <string>] [-lic_startup_options <string>]+ [-log <string>] [-no_gui] 
+          [-overwrite] [-version] [-wait <integer>] 
+
+    [-abort_on_error]:
+        exit on script error
+    [-batch]:
+        exit after processing files
+    [-del_scale 10]:
+        for low frequency designs (below 5kHz)
+    [-disable_user_startup]:
+        only read master init file
+    [-execute <string>]+:
+        command string to execute before '-files' processing
+    [-files <string>]+:
+        execute command file
+    [-help]:
+        print this message
+    [-legacy_gui]:
+        start tool with legacy GUI
+    [-legacy_ui]:
+        start tool with legacy UI
+    [-lic_stack <integer>]:
+        specify number of licenses for VDI/VDI_XL (max is 2)
+    [-lic_startup <string>]:
+        specifies one of the following licenses
+            Genus_Synthesis
+            Virtuoso_Digital_Implem
+            Virtuoso_Digital_Implem_XL
+    [-lic_startup_options <string>]+:
+        checkout an option license at startup
+            Genus_Low_Power_Opt
+            Genus_Physical_Opt
+            Vdixl_Capacity_Opt
+    [-log <string>]:
+        prefix for the .log and .cmd files. If two args are given like
+        -log "a b" then the two names are used without any extenstion
+        added. If the .log file already exists, an integer is appended
+        to all the names to make the files unique.
+    [-no_gui]:
+        start with GUI disabled
+    [-overwrite]:
+        overwrite default logfiles
+    [-version]:
+        return program version information
+    [-wait <integer>]:
+        queue wait timeout in minutes
+
+
+Lic Summary:
+[00:58:47.162129] Cdslmd servers:27020@kk9.cs.washington.edu:27007@mentorls.s.uw.edu:27006@cadencels.s.uw.edu
+[00:58:47.162138] Feature usage summary:
+

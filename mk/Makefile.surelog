@@ -1,0 +1,27 @@
+# Exporting to TCL scripts
+export TOOL := SURELOG
+export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
+export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
+export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
+
+WRAPPER := bsg_chip
+VPKG += bsg_chip_pkg.sv
+VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip.sv
+
+VDEFINES += SURELOG
+VDEFINES += SYNTHESIS
+
+SURELOG_OPTS += -sverilog
+SURELOG_OPTS += -fileunit
+SURELOG_OPTS += -parse
+#SURELOG_OPTS += -elabuhdm
+SURELOG_OPTS += -verbose
+
+parse: | $(BUILD_SOURCES)
+	@$(eval SURELOG_OPTS += $(addprefix +incdir+,$(VINCLUDES)))
+	@$(eval SURELOG_OPTS += $(addprefix +define+,$(VDEFINES)))
+	@$(SURELOG) $(SURELOG_OPTS) --top-module $(WRAPPER) $(VPKG) $(VSOURCES)
+
+generate:
+	@$(PYTHON) $(BSG_PEARLS_PY_DIR)/bsg_chip_info.py
+
