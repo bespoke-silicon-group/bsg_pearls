@@ -1,0 +1,129 @@
+# Set up the design
+include $(BSG_DESIGN_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
+
+# $(1) -> corner
+define bsg_fn_xcelium_build
+
+$(1)_XRUN_OPTS := $$(XRUN_OPTS)
+$(1)_XRUN_OPTS += -licinfo
+$(1)_XRUN_OPTS += -libverbose -configverbose
+$(1)_XRUN_OPTS += -elaborate
+$(1)_XRUN_OPTS += -nowarn SPDUSD
+$(1)_XRUN_OPTS += -nowarn NOTDEF
+$(1)_XRUN_OPTS += -nowarn UEXPSC
+$(1)_XRUN_OPTS += -nowarn VCFGUC
+
+ifeq ($(TRACE),1)
+$(1)_XRUN_OPTS += -access +rwc
+$(1)_XRUN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_ENABLE
+$(1)_XRUN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_DEPTH=0
+$(1)_XRUN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_HIER=testbench.harness.dut.chip
+$(1)_XRUN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_SHM
+endif
+
+ifeq ($(COVERAGE),1)
+$(1)_XRUN_OPTS += -coverage b:t:f
+$(1)_XRUN_OPTS += -covoverwrite
+$(1)_XRUN_OPTS += -nowarn COVFDP
+$(1)_XRUN_OPTS += -nowarn COVFHT
+$(1)_XRUN_OPTS += -nowarn COVNOEN
+$(1)_XRUN_OPTS += -nowarn COVUTA
+$(1)_XRUN_OPTS += -nowarn COVMDD
+endif
+
+$(1)_BUILD_LOG := $(abspath $(1)/build.log)
+$(1)/simx: | $(BUILD_SOURCES)
+	@$(SED) -i '/^-work/d' */*/flist.txt
+	@$(SED) -i "s/^+incdir+/-incdir /g" */*/flist.txt
+	@$(SED) -i "s/^+define+/-define /g" */*/flist.txt
+	@$(CD) work; \
+		$(XRUN) $$($(1)_XRUN_OPTS) -makelib vpkglib -f vpkg/flist.txt -endlib \
+			-reflib vpkglib -makelib vloglib -f vlog/flist.txt -endlib \
+			-reflib vpkglib -makelib testlib -f test/flist.txt -endlib \
+			-reflib vpkglib -makelib hardlib -f hard/flist.txt -endlib \
+			-vcfg_no_default_bind -compcnfg $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config.v \
+			-top config_$(1) \
+			-l $$($(1)_BUILD_LOG)
+	@$(SYMLINK) $$(abspath work/xcelium.d) vlog/xcelium.d
+	@$(TOUCH) $$@
+
+build-$(1): $(1)/simx
+
+clean::
+	@$(RMRF) $(1)
+
+endef
+
+# $(1) -> corner
+# $(2) -> name
+# $(3) -> tag trace
+# $(4) -> test trace
+define bsg_fn_xcelium_sim
+
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(3)))
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(4)))
+
+$(1)$(2)_XMSIM_OPTS := $(XMSIM_OPTS)
+$(1)$(2)_XMSIM_OPTS += -R -xmlibdirname ../xcelium.d
+ifeq ($(TRACE),1)
+$(1)$(2)_XMSIM_OPTS += -input $(BSG_PEARLS_TCL_DIR)/xcelium_dump.tcl
+endif
+
+$(1)$(2)_DUMPFILE := dump.shm
+$(1)$(2)_VIEWCMD := $(SIMVISION) -input
+
+$(1)$(2)_PLUSARGS := $(PLUSARGS)
+$(1)$(2)_PLUSARGS += +TAG_TRACE=$(3).tr
+$(1)$(2)_PLUSARGS += +TEST_TRACE=$(4).tr
+ifeq ($(TRACE),1)
+$(1)$(2)_PLUSARGS += +bsg_trace=$$($(1)$(2)_DUMPFILE)
+endif
+
+ifeq ($(COVERAGE),1)
+$(1)$(2)_XMSIM_OPTS += -covtest test_$(2)
+$(1)$(2)_XMSIM_OPTS += -covworkdir $(abspath work/coverage)
+endif
+
+$(1)_RUN_LOG := $(abspath $(1)/$(2)/run.log)
+$(1)/$(2)/run: $(1)/simx $(1)/$(2)/$(3).tr $(1)/$(2)/$(4).tr
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		$(XRUN) $$($(1)$(2)_XMSIM_OPTS) $$($(1)$(2)_PLUSARGS) -l $$($(1)_RUN_LOG)
+	@$(TOUCH) $$@
+run-$(1)-$(2): $(1)/$(2)/run
+
+$(1)/$(2)/view: $(1)/$(2)/$$($(1)$(2)_DUMPFILE)
+	@$(CD) $$(@D); \
+		$$($(1)$(2)_VIEWCMD) $$(<F) &
+view-$(1)-$(2): $(1)/$(2)/view
+
+clean::
+	@$(RMRF) build.history build.log
+	@$(RMRF) xcelium.d
+	@$(RMRF) .simvision
+	@$(RMRF) xrun.log xrun.history
+
+endef
+
+# $(1): corner (only vlog)
+define bsg_fn_xcelium_coverage
+
+$(1)_COVDIR := work/coverage
+
+$(1)_IMC_OPTS := -batch
+$(1)_IMC_OPTS += 
+
+$(1)/merged:
+	@echo "Merged coverage is not currently available in xcelium"
+coverage-$(1): $(1)/merged
+
+endef
+

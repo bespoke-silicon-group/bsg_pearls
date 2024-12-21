@@ -1,0 +1,11 @@
+
+# $(1) -> path
+# $(2) -> trace name
+define bsg_fn_trace_gen
+
+$(1)/$(2).tr: $(BSG_DESIGN_TEST_PY_DIR)/$(2).py
+	@$(MKDIR) -p $$(@D)
+	@PYTHONPATH=$(BSG_DESIGN_TEST_PY_DIR) $(PYTHON) -c \
+		"from $(2) import generate; print(generate())" > $$@
+endef
+

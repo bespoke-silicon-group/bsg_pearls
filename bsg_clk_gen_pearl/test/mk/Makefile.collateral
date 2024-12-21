@@ -1,0 +1,26 @@
+
+RESULTS_DIR := $(CURDIR)/results
+RESULTS_DETAILS_RPT := $(RESULTS_DIR)/typical.log
+RESULTS_CSV_SCRIPT := $(BSG_DESIGN_TEST_PY_DIR)/output_csv.py
+RESULTS_CSV := $(RESULTS_DIR)/summarize.csv
+RESULTS_PNG := $(RESULTS_DIR)/summarize.png
+
+summarize: ## quick summary of the clock edges observed
+	@$(GREP) -o -E ".*NEGEDGE.*[0-9]+\s+ps" $(RUN_LOG) | $(GREP) -o -E "[0-9]+\s+ps" | $(GREP) -o -E "[0-9]+" | $(COLUMN) -c 100
+	@$(GREP) -o -E ".*POSEDGE.*[0-9]+\s+ps" $(RUN_LOG) | $(GREP) -o -E "[0-9]+\s+ps" | $(GREP) -o -E "[0-9]+" | $(COLUMN) -c 100
+
+plot: ## plots duty cycle and period of the simulation
+plot: $(RESULTS_CSV) $(RESULTS_PNG)
+
+$(RESULTS_DIR):
+	@$(MKDIR) -p $@
+
+$(RESULTS_DETAILS_RPT): $(RESULTS_DIR)
+	@$(GREP) -o -E -n ".*NEGEDGE.*[0-9]+\s+ps" $(RUN_LOG)  > $@
+	@$(GREP) -o -E -n ".*POSEDGE.*[0-9]+\s+ps" $(RUN_LOG) >> $@
+
+$(RESULTS_CSV) $(RESULTS_PNG): $(RESULTS_CSV_SCRIPT) $(RESULTS_DETAILS_RPT)
+	@$(PYTHON) $< --logpath=$(RESULTS_DIR) > $@
+
+clean::
+	@$(RMRF) $(RUN_SOURCES)

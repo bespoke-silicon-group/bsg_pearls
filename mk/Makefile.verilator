@@ -1,0 +1,119 @@
+# Set up the design
+include $(BSG_DESIGN_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
+
+
+# $(1) -> corner
+define bsg_fn_verilator_build
+
+$(1)_VV_OPTS := $$(VV_OPTS)
+$(1)_VV_OPTS += --binary
+$(1)_VV_OPTS += --timescale 1ns/1ps
+$(1)_VV_OPTS += $$(foreach x,$$($(1)_LIBLISTS),-f $$(x)/flist.txt)
+$(1)_VV_OPTS += -Mdir $(1)
+$(1)_VV_OPTS += --top-module config_$(1)
+$(1)_VV_OPTS += $(BSG_PEARLS_TEST_SRC_DIR)/default.vlt
+$(1)_VV_OPTS += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config.v
+
+ifeq ($(TRACE),1)
+$(1)_VV_OPTS += --trace
+$(1)_VV_OPTS += --trace-fst
+$(1)_VV_OPTS += --trace-structs
+$(1)_VV_OPTS += --trace-depth 15
+$(1)_VV_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_ENABLE
+$(1)_VV_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_DEPTH=0
+$(1)_VV_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_HIER=testbench.harness.dut.chip
+$(1)_VV_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_FST
+endif
+
+ifeq ($(COVERAGE),1)
+$(1)_VV_OPTS += --coverage
+endif
+
+$(1)_VV_LOG := $(abspath $(1)/build.log)
+
+$(1)/simsc: | $(BUILD_SOURCES)
+	@$(MKDIR) -p $$(@D)
+	@$(CD) work/; \
+		$(VERILATOR) $$($(1)_VV_OPTS) -o $$(@F) |& $(TEE) $$($(1)_VV_LOG)
+	@$(SYMLINK) ../work/$(1)/$$(@F) $$@
+
+build-$(1): $(1)/simsc
+
+clean::
+	@$(RMRF) $(1)
+
+endef
+
+# $(1) -> corner
+# $(2) -> name
+# $(3) -> tag trace
+# $(4) -> test trace
+define bsg_fn_verilator_sim
+
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(3)))
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(4)))
+
+$(1)$(2)_SIMSC_OPTS := $(SIMSC_OPTS)
+
+ifeq ($(COVERAGE),1)
+$(1)_SIMSC_OPTS += +verilator+coverage+file+coverage.dat
+endif
+
+$(1)$(2)_DUMPFILE := dump.fst
+ifeq ($(ENABLE_SURFER),1)
+$(1)$(2)_VIEWCMD := $(SURFER)
+else
+$(1)$(2)_VIEWCMD := $(GTKWAVE) -f
+endif
+
+$(1)$(2)_PLUSARGS := $(PLUSARGS)
+$(1)$(2)_PLUSARGS += +TAG_TRACE=$(3).tr
+$(1)$(2)_PLUSARGS += +TEST_TRACE=$(4).tr
+ifeq ($(TRACE),1)
+$(1)$(2)_PLUSARGS += +bsg_trace=$$($(1)$(2)_DUMPFILE)
+endif
+
+$(1)_SIMSC_LOG := $(abspath $(1)/$(2)/run.log)
+
+$(1)/$(2)/run: $(1)/simsc $(1)/$(2)/$(3).tr $(1)/$(2)/$(4).tr
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		../$$(<F) $$($(1)$(2)_SIMSC_OPTS) $$($(1)$(2)_PLUSARGS) |& $(TEE) $$($(1)_SIMSC_LOG)
+	@$(TOUCH) $$@
+run-$(1)-$(2): $(1)/$(2)/run
+
+$(1)/$(2)/view: $(1)/$(2)/$$($(1)$(2)_DUMPFILE)
+	@$(CD) $$(@D); \
+		$$($(1)$(2)_VIEWCMD) $$(<F) &
+view-$(1)-$(2): $(1)/$(2)/view
+
+endef
+
+# $(1): corner (only vlog)
+define bsg_fn_verilator_coverage
+
+$(1)_COVDIR := work/coverage
+
+$(1)/merged.dat:
+	@$(MKDIR) -p work/coverage
+	$(CD) work; \
+	       $(VERILATOR)_coverage --write coverage/merged.dat ../$(1)/*/coverage.dat; \
+	       $(VERILATOR)_coverage --write-info coverage/merged.info coverage/merged.dat
+	$(CD) work; \
+		$(VERILATOR)_coverage --annotate coverage/annotated coverage/merged.dat; \
+		$(GENHTML) coverage/merged.info --output-directory coverage/html
+	@$(ECHO) "Coverage report generated in $(DUT_PATH)/coverage/html"
+	@$(ECHO) "View with web browser such as Firefox"
+
+coverage-$(1): $(1)/merged.dat
+
+endef
+
