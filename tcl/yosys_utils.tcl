@@ -73,24 +73,24 @@ proc bsg_yosys_read_design_slang { design vsources vdefines vincludes vparams } 
     eval ${slang_cmd} {{*}${vsources}}
 }
 
-# Leaving for posterity, but not used at the moment
-proc bsg_yosys_unwrap_design { wrapper design } {
+proc bsg_yosys_unwrap_design { design wrapper } {
     bsg_pr_info "Unwrapping ${wrapper}"
     yosys select N:${wrapper}/* t:*${design}* %i %M
     yosys tee -q -o $::G_TEMP_FILE select -list %
     yosys select -clear
     set curr_top [exec -- head -n 1 $::G_TEMP_FILE]
     bsg_yosys_rename_module ${curr_top} ${design}
+    bsg_pr_info "Toplevel is now ${design}"
 
     bsg_pr_info "Generating wrapper verilog"
     yosys select ${wrapper}
-    yosys write_verilog -selected -nostr -noattr -noexpr -nohex -nodec ${wrapper}.wrapper.v
+    yosys write_verilog -selected -nostr -noattr -noexpr -nohex -nodec ${design}.wrapper.v
     set sed_command "s|${design}|`BSG_CHIP_DUT_NAME|g"
     exec -- sed -i ${sed_command} ${design}.wrapper.v
     yosys select -clear
 
-    yosys delete ${wrapper}
     bsg_pr_info "Deleting ${wrapper}"
+    yosys delete ${wrapper}
 
     return ${design}
 }

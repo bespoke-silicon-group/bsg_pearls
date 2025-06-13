@@ -25,12 +25,6 @@ time.debug: $(TIMING_SCRIPT) $(DESIGN_SETUP_TCL)
 	@$(OSTA) $(OSTA_OPTS) $(TIMING_SCRIPT) \
 		|& $(TEE) -a $(LOGFILE)
 
-TEMP_NETLIST ?= .netlist.v
-$(DESIGN_SETUP_TCL):: $(BSG_CHIP_PKG_TCL) $(VSOURCES) $(HARD_VSOURCES) $(HARD_NSOURCES)
-	@$(ECHO) "set ::env(TOP_MODULE) $(TOP_MODULE)" >> $@
-	@$(ECHO) "set ::env(SYN_NETLIST) $(SYN_NETLIST)" >> $@
-	@$(ECHO) "set ::env(TEMP_NETLIST) $(TEMP_NETLIST)" >> $@
-
 clean::
 	@$(RMRF) *.rpt
 	@$(RMRF) *.lib

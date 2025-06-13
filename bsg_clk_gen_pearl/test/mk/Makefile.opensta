@@ -1,0 +1,3 @@
+
+include $(BSG_DESIGN_MK_DIR)/Makefile.opensta
+

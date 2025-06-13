@@ -1,34 +1,22 @@
 TOP ?= $(shell git rev-parse --show-toplevel)
 include $(TOP)/Makefile.common
-include $(BSG_PEARLS_MK_DIR)/Makefile.common
+include $(TOP)/Makefile.env
 
 # hardware definitions
+TRACE := 1
+ENABLE_SURFER := 1
 
-include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
-include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
-
-# collateral options
-
-BUILD_SOURCES := bsg_chip_pkg.sv bsg_chip_defines.svh
-
-VDEFINES := BSG_NO_TIMESCALE
 VDEFINES += BSG_OSC_BASE_DELAY=125
 VDEFINES += BSG_OSC_GRANULARITY=50
-VDEFINES += BSG_RP_CLK_GEN_SIM_DELAY=50
-
-tag_tr := tag_boot.tr
-test_tr := test1.tr
-RUN_SOURCES := $(tag_tr) $(test_tr)
+VDEFINES += BSG_RP_CLK_GEN_OSC_SIM_DELAY=125
+VDEFINES += BSG_RP_CLK_GEN_UNIT_SIM_DELAY=50
 
 include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.verilator
 
-# tool options
-
-RUN_ARGS := +TAG_TRACE=$(tag_tr)
-RUN_ARGS += +TEST_TRACE=$(test_tr)
-
-TRACE := 1
-ENABLE_SURFER := 0
-
-include $(BSG_PEARLS_MK_DIR)/Makefile.verilator
+$(eval $(call bsg_fn_verilator_sim,vlog,testA,tag_boot,test1))
+$(eval $(call bsg_fn_verilator_sim,vlog,testB,tag_boot,test1))
+$(eval $(call bsg_fn_verilator_sim,hard,testA,tag_boot,test1))
+$(eval $(call bsg_fn_verilator_sim,hard,testB,tag_boot,test1))
 

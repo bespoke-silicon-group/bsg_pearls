@@ -1,0 +1,4 @@
+// Prevent latch false positives: https://github.com/verilator/verilator/issues/5819
+lint_off -rule LATCH    -file "*/primitives.v"
+lint_off -rule COMBDLY  -file "*/primitives.v"
+

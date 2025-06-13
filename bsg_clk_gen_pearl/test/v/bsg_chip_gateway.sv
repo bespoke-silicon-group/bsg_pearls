@@ -1,5 +1,6 @@
 
 `include "bsg_chip_defines.svh"
+`include "bsg_tag.svh"
 
 module bsg_chip_gateway
  import bsg_chip_pkg::*;

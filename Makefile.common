@@ -1,55 +1,23 @@
+# v1.0
 
-# External dependencies
-TOP ?= $(shell git rev-parse --show-toplevel)
-ifeq (,$(wildcard $(TOP)))
-	$(error TOP: $(TOP) not found)
-endif
+#############################
+# global settings
+#############################
+## These should really not be changed
+SHELL := /bin/bash
+IS_TOP := $(if $(filter $(TOP),$(CURDIR)),1,0)
+IS_SINGLE := $(if $(filter 1,$(words $(MAKECMDGOALS))),1,0)
+.DEFAULT_GOAL: help
 
-BASEJUMP_STL_DIR ?= $(TOP)/../basejump_stl
-ifeq (,$(wildcard $(BASEJUMP_STL_DIR)))
-	$(error BASEJUMP_STL_DIR: $(BASEJUMP_STL_DIR) not found)
-endif
+#############################
+# variable templates
+#############################
+## these are variables and functions that can be used line functions
 
-BSG_CADENV_DIR ?= $(TOP)/../bsg_cadenv
-ifeq (,$(wildcard $(BSG_CADENV_DIR)))
-	$(info BSG_CADENV_DIR: $(BSG_CADENV_DIR) not found)
-else
-	include $(BSG_CADENV_DIR)/cadenv.mk
-endif
-
-# Searches up a dir tree for a specified matchfile
-# ex: bsg_fn_find_dir_width .BSG_DESIGN
-#   -> ../../
-# Credit to stdavids
-bsg_fn_find_dir_with = $(shell /usr/bin/perl -e 'chomp($$_ = `pwd`); while ($$_ ne "" && ! -e "$$_/$(1)") { m:(.*)/[^/]+/??:; $$_ = $$1; } print;')
-
-# Creates a standard directory tree at root
-# ex: bsg_fn_create_subdirs BSG_PEARLS, TOP
-#   -> BSG_PEARLS_MK_DIR := $(TOP)/mk
-define bsg_fn_create_subdirs
-	$(eval root_var := $(1))
-	$(eval root_dir := $(2))
-	$(eval $(root_var)_MK_DIR  := $(root_dir)/mk)
-	$(eval $(root_var)_PY_DIR  := $(root_dir)/py)
-	$(eval $(root_var)_SRC_DIR := $(root_dir)/v)
-	$(eval $(root_var)_TCL_DIR := $(root_dir)/tcl)
-	$(eval $(root_var)_TEST_DIR      := $(root_dir)/test)
-	$(eval $(root_var)_TEST_MK_DIR   := $(root_dir)/test/mk)
-	$(eval $(root_var)_TEST_PY_DIR   := $(root_dir)/test/py)
-	$(eval $(root_var)_TEST_SRC_DIR  := $(root_dir)/test/v)
-	$(eval $(root_var)_TEST_TCL_DIR  := $(root_dir)/test/tcl)
-	$(eval $(root_var)_YOSYS_DIR     := $(root_dir)/test/yosys)
-	$(eval $(root_var)_VCS_DIR       := $(root_dir)/test/vcs)
-	$(eval $(root_var)_VERILATOR_DIR := $(root_dir)/test/verilator)
-endef
-
-define bsg_fn_upper
-$(shell echo $(1) | tr a-z A-Z)
-endef
-define bsg_fn_lower
-$(shell echo $(1) | tr A-Z a-z)
-endef
 bsg_var_blank :=
+
+bsg_var_space := $(bsg_var_blank) # end of the line
+
 define bsg_var_newline
 
 $(bsg_var_blank)
@@ -57,69 +25,303 @@ endef
 
 bsg_var_percent := %
 
-bsg_var_tab := $(bsg_var_blank)	$(bsg_var_blank)
-bsg_var_space := $(bsg_var_blank) $(bsg_var_blank)
+define bsg_var_tab
+	
+endef
 
-# Define bsg_pearl IP toplevels
-BSG_PEARLS_DIR := $(TOP)
-BSG_DESIGN_DIR := $(call bsg_fn_find_dir_with,.BSG_DESIGN)
-BSG_DESIGN := $(shell cat $(BSG_DESIGN_DIR)/.BSG_DESIGN)
+define bsg_var_user
+	$(filter-out bsg_var_%,\
+		$(filter-out bsg_fn_%,\
+			$(filter-out $(VARS_OLD),$(.VARIABLES)\
+				)\
+			)\
+		)
+endef
 
-BSG_CLK_GEN_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_clk_gen_pearl
-BSG_SDR_LINK_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_sdr_link_pearl
-BSG_DDR_LINK_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_ddr_link_pearl
-BSG_DMC_PEARL_DIR ?= $(BSG_PEARLS_DIR)/bsg_dmc_pearl
+define bsg_var_upper
+	$(shell echo $(1) | tr a-z A-z)
+endef
 
-# Other directories
-BASEJUMP_STL_HARD_DIR ?= $(BASEJUMP_STL_DIR)/hard/sky_130
+define bsg_var_lower
+	$(shell echo $(1) | tr A-Z a-z)
+endef
 
-# Create the subdirectory structure
-$(eval $(call bsg_fn_create_subdirs,BSG_PEARLS,$(BSG_PEARLS_DIR)))
-$(eval $(call bsg_fn_create_subdirs,BSG_DESIGN,$(BSG_DESIGN_DIR)))
-$(eval $(call bsg_fn_create_subdirs,BSG_CLK_GEN_PEARL,$(BSG_CLK_GEN_PEARL_DIR)))
-$(eval $(call bsg_fn_create_subdirs,BSG_DMC_PEARL,$(BSG_DMC_PEARL_DIR)))
-$(eval $(call bsg_fn_create_subdirs,BSG_LINK_PEARL,$(BSG_LINK_PEARL_DIR)))
+#############################
+# function templates
+#############################
+## these can be implemented as $(call statements)
 
-# Basic bash commands
-SHELL := /bin/bash
-CD ?= cd
-CP ?= cp
-CAT ?= cat
-COLUMN ?= column
-DC_SHELL ?= dc_shell
-DVE ?= dve
-ECHO ?= echo
-EGREP ?= egrep
-GENUS ?= genus
-GREP ?= grep
-GTKWAVE ?= gtkwave
-IVERILOG ?= iverilog
-LC_SHELL ?= lc_shell
-MKDIR ?= mkdir
-OSTA ?= sta
-PYTHON ?= python
-RMRF ?= rm -rf
-SURELOG ?= surelog
-SURFER ?= surfer
-TCLSH ?= tclsh
-TEE ?= tee
-VCS ?= vcs
-VERDI ?= verdi
-VERILATOR ?= verilator
-VVP ?= vvp
-VLOGAN ?= vlogan
-YOSYS ?= yosys
+define bsg_fn_default_configure
+	$(eval $@_work := $(1))
+	$(eval $@_src := $(2))
+	$(eval $@_prefix := $(3))
+	$(eval $@_extra := $(4))
+	$(eval $@_strip := -s -Wl,--gc-sections)
+	cd ${$@_src}; autoconf -o ./configure || :; \
+	cd ${$@_work}; \
+		CFLAGS="$(CFLAGS)" \
+		CXXFLAGS="$(CXXFLAGS)" \
+		LDFLAGS="${$@_strip} $(LDFLAGS)" \
+		${$@_src}/configure --srcdir=${$@_src} --prefix=${$@_prefix} ${$@_extra} || :; \
+	:;
+endef
 
-# Global help target
-.DEFAULT_GOAL: help
+define bsg_fn_default_cmake
+	$(eval $@_work := $(1))
+	$(eval $@_src := $(2))
+	$(eval $@_prefix := $(3))
+	$(eval $@_extra := $(4))
+	$(eval $@_strip := -s -Wl,--gc-sections)
+	cmake -B ${$@_work} -S ${$@_src} -DCMAKE_INSTALL_PREFIX=${$@_prefix} \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_C_FLAGS="$(CFLAGS)" \
+		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
+		-DCMAKE_EXE_LINKER_FLAGS="${$@_strip} $(LDFLAGS)"; \
+	:;
+endef
+
+define bsg_fn_strip_binaries
+	$(eval $@_install := $(1))
+	find ${$@_install} -type f -exec sh -c '\
+		for file; do \
+			if file "$$file" | grep -qE "ELF (.* )?(executable|shared)"; then \
+				strip "$$file" >/dev/null 2>&1 || :; \
+			fi; \
+	done \
+	' sh {} +; \
+	:;
+endef
+
+#############################
+# templates
+#############################
+## these can be implemented as $(eval $(call statements))
+
+define bsg_tgt_build_tag
+	$(eval name := $(1))
+	$(eval src_dir := $(2))
+	$(eval touch_dir := $(3))
+	$(eval patch_dir := $(4))
+	$(eval work_dir := $(5))
+	$(eval tag := $(6))
+	$(eval checkout_tag := $(touch_dir)/$(name).checkout.$(tag))
+	$(eval checkout_target := checkout.$(name))
+	$(eval uncheckout_target := un$(checkout_target))
+	$(eval recheckout_target := re$(checkout_target))
+	$(eval patch_tag := $(touch_dir)/$(name).patch.$(tag))
+	$(eval patch_target := patch.$(name))
+	$(eval unpatch_target := un$(patch_target))
+	$(eval repatch_target := re$(patch_target))
+	$(eval build_tag := $(touch_dir)/$(name).build.$(tag))
+	$(eval build_target := build.$(name))
+	$(eval unbuild_target := un$(build_target))
+	$(eval rebuild_target := re$(build_target))
+	$(eval internal_target := $(work_dir)/$(name)/.$(name)_build)
+	$(eval patch_root := $(patch_dir)/$(if $(src_dir),$(shell basename $(src_dir)),$(name)))
+	$(eval patch_files := $(shell find $(patch_root) -name "*.patch" 2>/dev/null))
+	$(eval APPLY_PATCH := git apply --ignore-whitespace --ignore-space-change)
+	$(eval REVRS_PATCH := $(APPLY_PATCH) --reverse)
+	$(eval CHECK_PATCH := $(REVRS_PATCH) --check)
+
+$(uncheckout_target): $(unpatch_target)
+	if [ -f $(src_dir)/.git ]; then \
+		git submodule --quiet deinit --force $(src_dir); \
+		git submodule --quiet init $(src_dir); \
+		git submodule --quiet sync $(src_dir); \
+	fi
+$(checkout_target): | $(checkout_tag)
+$(recheckout_target): $(uncheckout_target)
+	@rm -f $(touch_dir)/$(name).checkout.*
+	@+$(MAKE) $(checkout_tag)
+$(checkout_tag):
+	@git submodule update $(src_dir)
+	@if [ -f $(src_dir)/.git ]; then \
+		git -C $(src_dir) submodule foreach --quiet "git submodule init"; \
+		git -C $(src_dir) submodule foreach --quiet "git submodule sync"; \
+		all_submodules=$$$$(git -C $(src_dir) submodule status --recursive | awk '{print $$$$2}'); \
+		if [ -n "$$$$all_submodules" ]; then \
+			skip_patterns="$(subst $(notdir $(src_dir))/,,$(subst $(bsg_var_space),,$(foreach s,$(HOOK_DISABLE_SUBMODULES),$(s).*|)))xnomatchx"; \
+			skip_submodules=$$$$(printf "%s\n" $$$$all_submodules | grep    -E "$$$$skip_patterns"); \
+			good_submodules=$$$$(printf "%s\n" $$$$all_submodules | grep -v -E "$$$$skip_patterns"); \
+			printf "submodules skipped: %s\n" $$$$skip_submodules; \
+			printf "submodules updating: %s\n" $$$$good_submodules; \
+			printf "%s\n" "$$$$good_submodules" | while read -r s; do \
+    			git -C $(src_dir) submodule update --init --recursive "$$$$s"; \
+			done; \
+		fi; \
+	fi
+	@touch $$@
+$(unpatch_target): $(unbuild_target)
+	@$(foreach p,$(patch_files),\
+		$(REVRS_PATCH) $(p) --directory $(dir $(subst $(patch_dir)/,,$(p))) || :;\
+		)
+	@if [ -f $(src_dir)/.git ]; then \
+		git -C $(src_dir) reset --hard --recurse-submodules; \
+		git -C $(src_dir) submodule sync --recursive; \
+	fi
+$(patch_target): | $(patch_tag)
+$(repatch_target): $(unpatch_target)
+	@rm -f $(touch_dir)/$(name).patch.*
+	@+$(MAKE) $(patch_tag)
+$(patch_tag): $(checkout_tag)
+	@echo "applying patches $(patch_files)"
+	@$(foreach p,$(patch_files),\
+		$(APPLY_PATCH) $(p) --directory $(dir $(subst $(patch_dir)/,,$(p)));\
+		)
+	@echo "Checking patches $(patch_files)"
+	@$(foreach p,$(patch_files),\
+		$(CHECK_PATCH) $(p) --directory $(dir $(subst $(patch_dir)/,,$(p)));\
+		)
+	@touch $$@
+$(unbuild_target):
+	@rm -rf $(work_dir)/$(name)
+$(build_target): | $(build_tag)
+$(rebuild_target): $(unbuild_target)
+	@rm -f $(touch_dir)/$(name).build.*
+	@+$(MAKE) $(build_tag)
+$(build_tag): | $(patch_tag)
+	@mkdir -p $(work_dir)/$(name)
+	@+$(MAKE) $(internal_target)
+	@touch $$@
+$(internal_target): $(src_dir)
+bleach::
+	@+$(MAKE) $(uncheckout_target)
+tidy::
+	@+$(MAKE) $(unpatch_target)
+clean::
+	@+$(MAKE) $(unbuild_target)
+endef
+
+define bsg_tgt_build_submodule
+	$(eval name := $(1))
+	$(eval src_dir := $(2))
+	$(eval touch_dir := $(3))
+	$(eval patch_dir := $(4))
+	$(eval work_dir := $(5))
+	$(eval tag := $(if $(src_dir),$(shell git ls-files --stage $(src_dir) | awk '{print $$2}'),any))
+	$(call bsg_tgt_build_tag,$(name),$(src_dir),$(touch_dir),$(patch_dir),$(work_dir),$(tag))
+endef
+
+#############################
+# targets
+#############################
+# global help
 .PHONY: help
-help: ## prints this message
-	@egrep -h '\s##\s' $(MAKEFILE_LIST) | sort \
+help: ## prints this target
+	@$(eval HELPFILTER := $(if $(findstring $(CURDIR),$(TOP)),xxxxxxxx,checkout|bleach_all|tidy|clean|bleach))
+	@grep -h '\s##\s' $(MAKEFILE_LIST) \
+		| grep -Ev "$(HELPFILTER)" \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
 
-clean:: # Clean base target, appended by each tool
-clean::
-	@$(RMRF) *.log
-	@$(RMRF) *.tr
-	@$(RMRF) *.txt
+ifeq ($(IS_TOP),1)
+# global reset
+.PHONY: bleach_all
+bleach_all: ## wipes the whole repo clean: use with caution
+	@git stash
+	@git clean -ffdx
+	@git reset --hard
+	@git submodule foreach --recursive --quiet 'git clean -fdx'
+	@git submodule foreach --recursive --quiet 'git reset --hard'
+	@git submodule deinit -f .
+
+# global checkout
+.PHONY: checkout
+checkout: $(BSG_CADENV_DIR)
+checkout: ## checkout submodules
+	@$(eval $@_hookdirs := $(HOOK_CHECKOUT_DIRS))
+	@$(eval $@_hookmatch := $(addsuffix /%,$($@_hookdirs)))
+	@$(eval $@_uservars := $(call bsg_var_user))
+	@$(eval $@_uppervars := $(filter $(call bsg_var_upper,$($@_uservars)),$($@_uservars)))
+	@$(eval $@_uppervals := $(foreach var,$($@_uppervars),$($(var))))
+	@$(eval $@_extradirs := $(filter $($@_hookmatch),$($@_uppervals)))
+	@mkdir -p ${$@_hookdirs} ${$@_extradirs}
+	@git submodule init
+	@git submodule sync
+
+# global submodule tidy
+.PHONY: tidy
+tidy:: ## tidies up submodules
+
+# global submodule bleach
+.PHONY: bleach
+bleach:: ## deinitializes submodules
+
+# global submodule bleach
+.PHONY: clean
+clean:: ## cleans submodules
+
+# stub bsg_cadenv
+%/cadenv.mk:
+	@# BSG users leverage a machine-specific cadenv
+	@#   Here, we add sourcing to get these variables as well
+	@$(eval export CADENV_URL := git@github.com:bespoke-silicon-group/bsg_cadenv)
+	@# Recursive make to include the new fragment
+	@if [ -f "$(BSG_CADENV_DIR)/cadenv.mk" ]; then \
+		echo "bsg_cadenv already exists"; \
+	elif [[ ! -z $$(git ls-remote --exit-code $${CADENV_URL} HEAD 2> /dev/null) ]]; then \
+		git clone --recurse-submodules $${CADENV_URL} $(@D); \
+	else \
+		echo "bsg_cadenv not found"; \
+		mkdir -p $(@D); \
+		touch $@; \
+	fi
+	@echo "Successfully built $@!"
+
+endif
+
+ifneq ($(IS_SINGLE),1)
+ifneq (,$(filter help,$(MAKECMDGOALS)))
+$(error help must be called as a single target)
+endif
+ifneq (,$(filter bleach_all,$(MAKECMDGOALS)))
+$(error bleach_all must be called as a single target)
+endif
+ifneq (,$(filter checkout,$(MAKECMDGOALS)))
+$(error checkout must be called as a single target)
+endif
+endif
+
+##########################################################
+## Cad environment
+##########################################################
+## override if needed
+## BSG members should use bsg_cadenv, which _should_ be automatically handled by this script
+CENTOS7  ?= $(if $(findstring CentOS Linux release 7,$(shell cat /etc/centos-release 2>/dev/null)),1,0)
+ARMV7    ?= $(if $(findstring armv7l,$(shell /usr/bin/arch)),1,0)
+AARCH64  ?= $(if $(findstring aarch64,$(shell /usr/bin/arch)),1,0)
+ARM      ?= $(if $(ARMV7),1,$(if $(AARCH64),1,0))
+UBUNTU24 ?= $(if $(findstring Ubuntu 24,$(shell lsb_release -a 2>/dev/null)),1,0)
+NUMPROC  ?= $(shell grep -c ^processor /proc/cpuinfo)
+
+CMAKE     ?= $(if $(shell which cmake3),cmake3,cmake)
+DC_SHELL  ?= dc_shell
+DOCKER    ?= docker
+DVE       ?= dve
+ENVSUBST  ?= envsubst
+GCC       ?= gcc
+GXX       ?= g++
+GTKWAVE   ?= gtkwave
+PYTHON    ?= $(if $(shell which python3),python3,python)
+SURELOG   ?= surelog
+SURFER    ?= surfer
+URG       ?= urg
+VCS       ?= vcs
+VLOGAN    ?= vlogan
+VERILATOR ?= verilator
+VIVADO    ?= vivado
+YOSYS     ?= yosys
+# Specify license paths if needed
+VCS_HOME        ?=
+LM_LICENSE_FILE ?=
+# Commonly needed on CentOS
+export VCS_ARCH_OVERRIDE=linux
+
+ifneq (,$(filter-out bleach_all help ,$(MAKECMDGOALS)))
+BSG_CADENV_DIR ?= $(TOP)/bsg_cadenv
+include $(BSG_CADENV_DIR)/cadenv.mk
+endif
+
+# Saves initial values so that we can filter them later
+# MUST BE LAST
+VARS_OLD := $(.VARIABLES)
 

@@ -13,7 +13,7 @@ from bsg_chip_pkg_gen import (
 )
 
 
-class BsgClkGenPearlPkg(BsgChipPkgObject):
+class BsgChipPkg(BsgChipPkgObject):
     def __init__(self):
         super().__init__(name="bsg_clk_gen_pearl", struct="bsg_chip")
 

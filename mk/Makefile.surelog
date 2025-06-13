@@ -1,27 +1,39 @@
-# Exporting to TCL scripts
-export TOOL := SURELOG
-export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
-export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
-export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
 
-WRAPPER := bsg_chip
-VPKG += bsg_chip_pkg.sv
-VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip.sv
+# $(1) -> parse tag
+define bsg_fn_surelog_parse
 
-VDEFINES += SURELOG
-VDEFINES += SYNTHESIS
+$(eval $(call bsg_fn_chip_gen,src))
+
+$(eval $(call bsg_fn_pickle,src,wrapper))
+
+$(1)opts := $(SURELOG_OPTS)
+$(1)opts += $(addprefix +define+,$(VDEFINES))
+
+$(1)/parse: syn/wrapper.pickled.sv
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		$(SURELOG) $$($(1)opts) $$(abspath $$^)
+parse-$(1): $(1)/parse
+
+generate-$(1): $(1)/generate
+
+$(1)/generate: $(1)/parse
+	@$(CD) $$(@D); \
+		$(PYTHON) $(BSG_PEARLS_PY_DIR)/bsg_chip_info.py slpp_unit/surelog.uhdm
+
+clean::
+	@$(RM) -rf $(1)/parse.log
+	@$(RM) -rf $(1)/slpp_unit
+
+endef
 
 SURELOG_OPTS += -sverilog
 SURELOG_OPTS += -fileunit
 SURELOG_OPTS += -parse
-#SURELOG_OPTS += -elabuhdm
 SURELOG_OPTS += -verbose
+SURELOG_OPTS += -elabuhdm
+SURELOG_OPTS += --top-module wrapper
+SURELOG_OPTS += -l ../parse.log
 
-parse: | $(BUILD_SOURCES)
-	@$(eval SURELOG_OPTS += $(addprefix +incdir+,$(VINCLUDES)))
-	@$(eval SURELOG_OPTS += $(addprefix +define+,$(VDEFINES)))
-	@$(SURELOG) $(SURELOG_OPTS) --top-module $(WRAPPER) $(VPKG) $(VSOURCES)
-
-generate:
-	@$(PYTHON) $(BSG_PEARLS_PY_DIR)/bsg_chip_info.py
+$(eval $(call bsg_fn_surelog_parse,basic))
 

@@ -46,3 +46,4 @@ alib-*/
 *.sdc.gz
 slpp_unit/
 slpp_all/
+*.pickled.sv

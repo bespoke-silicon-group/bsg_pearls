@@ -1,0 +1,3 @@
+
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.yosys
+

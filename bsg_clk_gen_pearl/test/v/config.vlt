@@ -1,0 +1,2 @@
+lint_off -rule UNOPTFLAT -file "*.sv" -match "Signal unoptimizable: Circular combinational logic: '*clk_gen_inst.osc_clk_out'*"
+

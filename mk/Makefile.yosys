@@ -1,41 +1,46 @@
-# Exporting to TCL scripts
-export TOOL := YOSYS
-export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
-export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
-export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
 
-YOSYS_OPTS += -m slang
-VDEFINES += YOSYS
+# $(1) -> synthesis tag
+define bsg_fn_yosys_synth
 
-SYNTH_SCRIPT ?= $(BSG_PEARLS_TCL_DIR)/synthesis.yosys.tcl
-synth: ## Runs synthesis
-synth: $(BUILD_SOURCES)
-synth: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
-	@$(eval LOGFILE := synth.log)
-	@$(eval export BSG_LOG_LEVEL := 1)
-	@$(ECHO) "Running synthesis" > $(LOGFILE)
-	@$(YOSYS) $(YOSYS_OPTS) -p "tcl $(SYNTH_SCRIPT)" \
-		|& $(TEE) -a $(LOGFILE)
+$(1)opts := $(YOSYS_OPTS)
+$(1)opts += $$(addprefix -p "tcl ,$$(addsuffix ",$$($(1)_SCRIPTS)))
+ifdef $(1)_SHELL
+$(1)opts += -C
+endif
 
-synth.debug: ## Runs synthesis with debug logging enabled
-synth.debug: $(BUILD_SOURCES)
-synth.debug: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
-	@$(eval LOGFILE := synth.debug.log)
-	@$(eval export BSG_LOG_LEVEL := 3)
-	@$(ECHO) "Running debug synthesis" > $(LOGFILE)
-	@$(YOSYS) $(YOSYS_OPTS) -p "tcl $(SYNTH_SCRIPT)" \
-		-p "shell" \
-		|& $(TEE) -a $(LOGFILE)
+$(1)/%.tcl: $(BSG_PEARLS_TCL_DIR)/%.tcl
+	@$(CP) $$< $$@
+
+$(1)/synth: $$(addprefix $(1)/,$$($(1)_SCRIPTS)) syn/wrapper.pickled.sv
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		$(YOSYS) $$($(1)opts)
+synth-$(1): $(1)/synth
 
 clean::
-	@$(RMRF) *.stats.json
-	@$(RMRF) *.checks.txt
-	@$(RMRF) *.blif
-	@$(RMRF) *.elab.v
-	@$(RMRF) *.gen.v
-	@$(RMRF) *.opt.v
-	@$(RMRF) *.tech.v
-	@$(RMRF) *.final.v
-	@$(RMRF) *.wrapper.v
-	@$(RMRF) $(DESIGN_SETUP_TCL)
+	@$(RM) -rf $(1)/synth.log
+	@$(RM) -rf $$(addprefix $(1)/,$$($(1)_SCRIPTS))
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.v
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.txt
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.json
+
+endef
+
+YOSYS_OPTS += -m slang
+YOSYS_OPTS += -l synth.log
+
+basic_SCRIPTS    := bsg_pearls_setup.tcl bsg_design_setup.tcl bsg_chip_pkg.tcl bsg_utils.tcl yosys_utils.tcl synthesis.yosys.tcl
+basic_LOGLEVEL   := 2
+
+debug_SCRIPTS    := bsg_pearls_setup.tcl bsg_design_setup.tcl bsg_chip_pkg.tcl bsg_utils.tcl yosys_utils.tcl synthesis.yosys.tcl
+debug_LOGLEVEL   := 3
+debug_SHELL      := DEFINED
+
+iterate_SCRIPTS  := bsg_pearls_setup.tcl bsg_design_setup.tcl bsg_chip_pkg.tcl bsg_utils.tcl yosys_utils.tcl
+iterate_LOGLEVEL := 99
+iterate_SHELL    := DEFINED
+
+$(eval $(call bsg_fn_yosys_synth,basic))
+$(eval $(call bsg_fn_yosys_synth,debug))
+$(eval $(call bsg_fn_yosys_synth,iterate))
 

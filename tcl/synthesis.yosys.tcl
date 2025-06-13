@@ -3,23 +3,22 @@
 #####################################################
 
 # Must set these environment variables, everything else is optional (hopefully)
-set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
 set BSG_DESIGN_TCL_DIR $::env(BSG_DESIGN_TCL_DIR)
+set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
 set BSG_LOG_LEVEL      $::env(BSG_LOG_LEVEL)
-source ${BSG_CHIP_TCL_DIR}/bsg_utils.tcl
-source ${BSG_CHIP_TCL_DIR}/yosys_utils.tcl
 
 #####################################################
 ## Tool setup
 #####################################################
 bsg_yosys_setup_init ${BSG_LOG_LEVEL}
 
+# suppress error message
+try {
 #####################################################
 ## STEP: bsg
 #####################################################
 set step bsg
-bsg_pr_info "Setting up design environment"
-set BSG_DESIGN_SETUP_SCRIPT [bsg_get_env BSG_DESIGN_SETUP_SCRIPT design_setup.tcl]
+bsg_pr_info "Running step: ${step}"
 
 bsg_pr_info "Reading hooks"
 set BSG_DESIGN_PARAMETERS_SCRIPT [bsg_get_env BSG_DESIGN_PARAMETERS_SCRIPT ${BSG_DESIGN_TCL_DIR}/parameters.tcl]
@@ -42,7 +41,6 @@ set BSG_DESIGN_POSTFINAL_SCRIPT [bsg_get_env BSG_DESIGN_POSTFINAL_SCRIPT ${BSG_D
 #####################################################
 set step design
 bsg_pr_info "Running step: ${step}"
-bsg_source_if_exists ${BSG_DESIGN_SETUP_SCRIPT}
 
 set PDK_ROOT [bsg_get_env PDK_ROOT]
 set PDK [bsg_get_env PDK]
@@ -51,15 +49,15 @@ set PDK_CORNER [bsg_get_env PDK_CORNER]
 
 set VDEFINES [bsg_get_env VDEFINES]
 set VINCLUDES [bsg_get_env VINCLUDES]
-set VPKG [bsg_get_env VPKG]
 set VSOURCES [bsg_get_env VSOURCES]
-set HARD_VSOURCES [bsg_get_env HARD_VSOURCES]
-set HARD_NSOURCES [bsg_get_env HARD_NSOURCES]
+set NSOURCES [bsg_get_env NSOURCES]
 
+set WRAPPER [bsg_get_env WRAPPER]
 set DESIGN [bsg_get_env DESIGN]
 set GPARAMS [bsg_get_env GPARAMS]
 
 set design ${DESIGN}
+set wrapper ${WRAPPER}
 bsg_design_init ${design}
 
 #####################################################
@@ -89,7 +87,7 @@ bsg_pr_info "Reading PDK libs ${all_libs}"
 yosys read_liberty -lib -ignore_miss_dir ${all_libs}
 
 # We handle yosys netlists a little differently, with whitebox attribute
-set final_nsources ${HARD_NSOURCES}
+set final_nsources ${NSOURCES}
 foreach n ${final_nsources} {
     set n_tail [file tail $n]
     bsg_pr_info "Adding hardened netlist as whitebox: ${n_tail}"
@@ -105,10 +103,10 @@ set step elab
 bsg_pr_info "Running step: ${step}"
 bsg_source_if_exists ${BSG_DESIGN_PREELAB_SCRIPT}
 
-set design ${DESIGN}
-
-set final_vsources [bsg_source_swap ${VPKG} ${VSOURCES} ${HARD_VSOURCES} {}]
-set final_vincludes ${VINCLUDES}
+set final_design ${DESIGN}
+set final_wrapper ${WRAPPER}
+set final_vsources [concat ${VSOURCES}]
+set final_vincludes [concat ${VINCLUDES}]
 set final_vdefines [concat ${VDEFINES} BSG_NO_TIMESCALE SYNTHESIS]
 set final_vparams {}
 bsg_source_if_exists ${BSG_DESIGN_PARAMETERS_SCRIPT}
@@ -117,11 +115,14 @@ if {[llength [info procs design_extract_vparams]]} {
 }
 
 bsg_yosys_read_design_slang \
-    ${design} \
+    ${final_wrapper} \
     ${final_vsources} \
     ${final_vdefines} \
     ${final_vincludes} \
     ${final_vparams}
+
+# set design as toplevel
+bsg_yosys_unwrap_design ${final_design} ${final_wrapper} 
 
 # elaborate design hierarchy
 yosys hierarchy -check -top ${design}
@@ -209,4 +210,10 @@ bsg_source_if_exists ${BSG_DESIGN_POSTFINAL_SCRIPT}
 bsg_yosys_save_step ${design} ${step}
 
 bsg_pr_info "Synthesis script finished!"
+
+} on error {msg opts} {
+    bsg_pr_error "TCL error on line [dict get ${opts} -errorline]"
+    bsg_pr_error "Stack trace:\n[dict get ${opts} -errorinfo]"
+    bsg_pr_error "Error message: ${msg}\n"
+}
 

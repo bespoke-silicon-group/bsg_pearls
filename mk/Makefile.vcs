@@ -1,134 +1,126 @@
-# Exporting to TCL scripts
-export TOOL := VCS
 
-TESTBENCH := testbench
-WRAPPER := bsg_chip
+# $(1) -> corner
+define bsg_fn_vcs_build
 
-ifeq ($(TRACE),1)
-TEST_VDEFINES += TRACE_ENABLE
-ifeq ($(ENABLE_VERDI),1)
-TEST_VDEFINES += FSDB_ENABLE
-else
-TEST_VDEFINES += VPD_ENABLE
-endif
-endif
+$(1)vhdlsrc := $$(filter %.vhd %.vhdl,$$($(1)_SOURCES))
+$(1)svsrc   := $$(filter %.v %.sv,$$($(1)_SOURCES))
 
-VDEFINES += FUNCTIONAL
-VDEFINES += UNIT_DELAY=#1ps
+$(1)/simv: $$($(1)_SOURCES) test/testbench.pickled.sv
+	@echo "SOURCES $$($(1)_SOURCES)"
+	@echo "VHDL $$($(1)vhdlsrc)"
+	@echo "SV $$($(1)svsrc)"
 
-VLOGAN_OPTS += -full64
-VLOGAN_OPTS += -sverilog +v2k
-VLOGAN_OPTS += -timescale=1ps/1ps
-VLOGAN_OPTS += -V
-VLOGAN_OPTS += $(addprefix +incdir+,$(VINCLUDES))
-VLOGAN_OPTS += $(addprefix +define+,$(VDEFINES))
-
-# Could generate, but there's not too many here
-SIM_LIBRARIES := pdk vpkg vlog hard syn
-SIM_CORNERS   := vlog hard syn-elab syn-gen syn-opt syn-tech syn-final
-
-WORKDIR ?= work
-SIM_SETUP ?= synopsys_sim.setup
-BSG_CONFIG ?= $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config.v
-$(SIM_SETUP): $(BSG_CONFIG)
-	@$(ECHO) "--" > $@
-	@$(ECHO) "-- Default Library Mapping"           >> $@
-	@$(ECHO) "WORK > DEFAULT"                       >> $@
-	@$(ECHO) "DEFAULT : ./$(WORKDIR)"               >> $@
-	@$(ECHO) "-- Extra Library Mappings"            >> $@
-	@for l in $(SIM_LIBRARIES); do \
-		$(ECHO) "$${l}lib : ./$(WORKDIR)/lib/$${l}" >> $@; \
-	done
-	@$(ECHO) "-- Extra Work Directories"            >> $@;
-	@for c in $(SIM_CORNERS); do \
-		$(ECHO) "$${c}-work : ./$(WORKDIR)/$${c}" >> $@; \
-	done
-
-# Dependencies for each set of sources
-compile-vpkg.log: $(SIM_SETUP) $(VPKG)
-compile-pdk.log : compile-vpkg $(PDK_VSOURCES)
-compile-vlog.log: compile-pdk $(VSOURCES)
-compile-hard.log: compile-vlog $(HARD_VSOURCES) $(HARD_NSOURCES)
-compile-syn.log : compile-pdk $(SYN_VSOURCES) $(HARD_NSOURCES)
-
-compile-%: ## compiles simulation libraries
-COMPILE_TGT := $(foreach c,$(SIM_LIBRARIES),compile-$(c))
-$(COMPILE_TGT): compile-%: compile-%.log
-compile-%.log:
-	@$(ECHO) "Compiling $*lib" > $@
-	@$(VLOGAN) $(VLOGAN_OPTS) $(filter-out $<,$^) -work $*lib |& $(TEE) -a $@
-
-VCS_BUILD_OPTS += -full64
-VCS_BUILD_OPTS += -notice
-VCS_BUILD_OPTS += -V
-VCS_BUILD_OPTS += -sverilog
-VCS_BUILD_OPTS += -assert svaext
-VCS_BUILD_OPTS += +noportcoerce
-VCS_BUILD_OPTS += +nospecify +notimingcheck
-VCS_BUILD_OPTS += +vcs+loopdetect
-VCS_BUILD_OPTS += -timescale=1ps/1ps
-VCS_BUILD_OPTS += -ignore initializer_driver_checks
-VCS_BUILD_OPTS += -diag libconfig -libmap_verbose
-
-ifeq ($(TRACE),1)
-VCS_BUILD_OPTS += -debug_access+r
-endif
-
-# Dependencies for each set of sources
-build-vlog.log      : compile-vlog
-build-hard.log      : compile-hard
-build-syn-elab.log  : compile-syn
-build-syn-gen.log   : compile-syn
-build-syn-opt.log   : compile-syn
-build-syn-tech.log  : compile-syn
-build-syn-final.log : compile-syn
-build-%: ## builds a simulation (build-<CORNER>) for individual corner
-BUILD_TGT := $(foreach c,$(SIM_CORNERS),build-$(c))
-$(BUILD_TGT): $(BUILD_SOURCES)
-$(BUILD_TGT): build-%: build-%.log
-build-%.log:
-	@$(eval RAW_CORNER := $*)
-	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
-	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
-	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
-	@$(eval SIMV_BIN := simv-$(RAW_CORNER))
-	@$(eval TEST_VDEFINES += BSG_CHIP_DUT_NAME=$(DUT_NAME))
-	@$(eval VLOGAN_OPTS += $(addprefix +incdir+,$(TEST_VINCLUDES)))
-	@$(eval VLOGAN_OPTS += $(addprefix +define+,$(TEST_VDEFINES)))
-	@$(ECHO) "compiling test sources..." > $@
-	@$(VLOGAN) $(VLOGAN_OPTS) $(TEST_VSOURCES) $(BSG_CONFIG) -work $(RAW_CORNER)-work |& $(TEE) -a $@
-	@$(ECHO) "elaborating corner: $(RAW_CORNER)..." |& $(TEE) -a $@
-	@$(VCS) $(VCS_BUILD_OPTS) -top config_$(CONFIG_TYPE) -o $(SIMV_BIN) |& $(TEE) -a $@
-	
-VCS_RUN_OPTS += -no_save
-#VCS_RUN_OPTS += +vcs+loopdetect
-
-run-%: ## runs a simulations (run-<CORNER>) for individual corner
-RUN_TGT := $(foreach c,$(SIM_CORNERS),run-$(c))
-$(RUN_TGT): $(RUN_SOURCES)
-$(RUN_TGT): run-%: run-%.log
-run-%.log: build-%.log
-	@$(eval RAW_CORNER := $*)
-	@$(eval SIMV_BIN := simv-$(RAW_CORNER))
-	@$(eval RUN_ARGS += +bsg_trace=$(if $(filter 1,$(ENABLE_VERDI)),dump-$*.fsdb,dump-$*.vpd))
-	@$(ECHO) "running simulation $(RUN_ARGS)" > $@
-	@./$(SIMV_BIN) $(VCS_RUN_OPTS) $(RUN_ARGS) |& $(TEE) -a $@
-
-VIEW_TGT := $(foreach c,$(SIM_CORNERS),view-$(c))
-view-%: ## opens a .fst dump in Surfer
-ifeq ($(ENABLE_VERDI),1)
-$(VIEW_TGT): view-%: dump-%.fsdb
-	@$(VERDI) -ssf $<
-else
-$(VIEW_TGT): view-%: dump-%.vpd
-	@$(DVE) -full64 -vpd $<
-endif
+$(1)-nothing:
+	$(CD) $$(@D); \
+		$(VHDLAN) $(VHDLAN_OPTS) $$($(1)vhdlsrc) -l vhdlan.log
+	$(CD) $$(@D); \
+		$(VLOGAN) $(VLOGAN_OPTS) $$($(1)svsrc) -l vlogan.log
+	$(CD) $$(@D); \
+		$(VCS) $(VCS_OPTS) -l build.log
+build-$(1): $(1)/simv
 
 clean::
-	@$(RMRF) $(SIM_DUMP)
-	@$(RMRF) simv-*
-	@$(RMRF) csrc/ vc_hdrs.h ucli.key synopsys_sim.setup
-	@$(RMRF) work/
-	@$(RMRF) DVEfiles/
-	@$(RMRF) *.vpd *.fsdb novas.* novas.* verdiLog
+	@$(RM) -rf $(1)/simv
+	@$(RM) -rf $(1)/simv.daidir
+	@$(RM) -rf $(1)/csrc
+	@$(RM) -rf $(1)/vc_hdrs.h
+	@$(RM) -rf $(1)/AN.DB
+	@$(RM) -rf $(1)/64
+	@$(RM) -rf $(1)/vlogan.log
+	@$(RM) -rf $(1)/vhdlan.log
+	@$(RM) -rf $(1)/build.log
+
+endef
+
+# $(1) -> corner
+# $(2) -> name
+# $(3) -> tag trace
+# $(4) -> test trace
+define bsg_fn_vcs_sim
+
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(3)))
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(4)))
+
+$(1)$(2)plusargs += +TAG_TRACE=$(3).tr
+$(1)$(2)plusargs += +TEST_TRACE=$(4).tr
+
+$(1)$(2)runopts := $(SIMV_OPTS)
+
+ifeq ($(ENABLE_VERDI),1)
+$(1)$(2)dumpfile := dump.fsdb
+$(1)$(2)viewcmd := $(VERDI) -ssf $$($(1)$(2)dumpfile)
+else
+$(1)$(2)dumpfile := dump.vpd
+$(1)$(2)viewcmd := $(DVE) -full64 -vpd $$($(1)$(2)dumpfile)
+endif
+
+ifeq ($(TRACE),1)
+$(1)$(2)runopts += +bsg_trace=$$($(1)$(2)dumpfile)
+endif
+
+$(1)/$(2)/run: $(1)/simv $(1)/$(2)/$(3).tr $(1)/$(2)/$(4).tr
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		../$$(<F) $$($(1)$(2)runopts) $$($(1)$(2)plusargs) -l run.log
+run-$(1)-$(2): $(1)/$(2)/run
+
+$(1)/$(2)/view: $(1)/$(2)/$$($(1)$(2)dumpfile)
+	@$(CD) $$(@D); $$($(1)$(2)viewcmd) $$($(1)$(2)dumpfile) &
+view-$(1)-$(2): $(1)/$(2)/view
+
+clean::
+	@$(RM) -rf $(1)/$(2)/run.log
+	@$(RM) -rf $(1)/$(2)/ucli.key
+	@$(RM) -rf $(1)/$(2)/$(3).tr
+	@$(RM) -rf $(1)/$(2)/$(4).tr
+	@$(RM) -rf $(1)/$(2)/$$($(1)$(2)dumpfile)
+
+endef
+
+SIMLIB += $(filter-out %_sim.vhd,$(wildcard $(VCS_HOME)/packages/gtech/src/*.vhd))
+SIMLIB += $(filter     %_sim.vhd,$(wildcard $(VCS_HOME)/packages/gtech/src/*.vhd))
+
+VHDLAN_OPTS += -full64
+VHDLAN_OPTS += -vhdl08
+VHDLAN_OPTS += -verbose
+
+VLOGAN_OPTS += -full64
+VLOGAN_OPTS += -notice
+VLOGAN_OPTS += -sverilog +v2k
+VLOGAN_OPTS += -timescale=1ps/1ps
+VLOGAN_OPTS += $(addprefix +define+,$(VDEFINES) $(TEST_VDEFINES))
+VLOGAN_OPTS += -V
+
+ifeq ($(ENABLE_VERDI),1)
+VLOGAN_OPTS += -kdb
+endif
+
+ifeq ($(TRACE),1)
+VCS_OPTS += -debug_access+r
+endif
+
+VCS_OPTS += -full64
+VCS_OPTS += +noportcoerce
+VCS_OPTS += +nospecify +notimingcheck
+VCS_OPTS += +vcs+loopdetect
+VCS_OPTS += -ignore initializer_driver_checks
+VCS_OPTS += -V
+VCS_OPTS += -top testbench
+VCS_OPTS += -o simv
+
+vlog_SOURCES := vlog/wrapper.pickled.sv
+hard_SOURCES := hard/wrapper.pickled.sv $(HARD_NSOURCES)
+syn_SOURCES := $(BSG_DESIGN_DC_DIR)/basic/$(BSG_DESIGN).wrapper.v $(HARD_NSOURCES)
+syn-elab_SOURCES := $(syn_SOURCES) $(BSG_DESIGN_DC_DIR)/basic/$(BSG_DESIGN).elab.v
+
+SIMV_OPTS += -no_save
+#SIMV_OPTS += +vcs+loopdetect
+
+$(eval $(call bsg_fn_vcs_build,vlog))
+$(eval $(call bsg_fn_vcs_build,hard))
+$(eval $(call bsg_fn_vcs_build,syn-elab))
+#$(eval $(call bsg_fn_vcs_build,syn-gen))
+#$(eval $(call bsg_fn_vcs_build,syn-opt))
+#$(eval $(call bsg_fn_vcs_build,syn-tech))
+#$(eval $(call bsg_fn_vcs_build,syn-final))
 

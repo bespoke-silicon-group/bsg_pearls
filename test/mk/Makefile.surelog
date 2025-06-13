@@ -1,0 +1,3 @@
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.surelog
+

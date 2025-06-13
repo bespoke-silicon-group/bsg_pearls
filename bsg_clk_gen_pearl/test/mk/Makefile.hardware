@@ -2,10 +2,13 @@
 TEST_VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_misc
 TEST_VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_tag
 
-TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_launch_sync_sync.sv
-TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_sync_sync.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_misc/bsg_defines.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_launch_sync_sync.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_sync_sync.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_sync_sync_unit.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_sync_sync_async_reset_unit.sv
 
-TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_nonsynth_clk_watcher.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_clk_gen/bsg_nonsynth_clk_watcher.sv
 
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_parallel_in_serial_out.sv
@@ -16,7 +19,7 @@ TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff_en.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff_reset.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_dff_reset_en.sv
-TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_mux.sv
+TEST_VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_misc/bsg_mux.sv
 
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1r1w.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1r1w_synth.sv
@@ -28,20 +31,8 @@ TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_trace_replay.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.sv
 TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv
 
-TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_nonsynth_test_rom_plusargs.sv
-TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_chip_tester.sv
+TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip_harness.sv
 TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip_gateway.sv
-TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip.sv
-TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/testbench.sv
 
-PDK_VSOURCES += $(shell yosys-config --datdir)/simcells.v
-PDK_VSOURCES += $(shell yosys-config --datdir)/simlib.v
-PDK_VSOURCES += $(PDK_ROOT)/$(PDK)/libs.ref/$(PDK_LIB)/verilog/$(PDK_LIB).v
-PDK_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/primitives.v
-
-PDK_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_nonsynth_clk_gen_osc_unit_v3.v
-
-# Dummy file in case things aren't found
-SYN_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_defines.sv
-SYN_VSOURCES += $(wildcard $(BSG_DESIGN_YOSYS_DIR)/$(BSG_DESIGN).*.v)
+include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
 

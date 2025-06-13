@@ -1,38 +1,51 @@
-# Exporting to TCL scripts
-export TOOL := DC
-export BSG_DESIGN_TCL_DIR := $(BSG_DESIGN_TCL_DIR)
-export BSG_CHIP_TCL_DIR := $(BSG_PEARLS_TCL_DIR)
-export DESIGN_SETUP_TCL := $(DESIGN_SETUP_TCL)
 
-DC_OPTS += -64bit
+# $(1) -> synthesis tag
+define bsg_fn_dc_synth
 
-SYNTH_SCRIPT ?= $(BSG_PEARLS_TCL_DIR)/synthesis.dc.tcl
-synth: ## Runs synthesis
-synth: $(BUILD_SOURCES)
-synth: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
-	@$(eval LOGFILE := synth.log)
-	@$(eval export BSG_LOG_LEVEL := 2)
-	@$(ECHO) "Running synthesis" > $(LOGFILE)
-	@$(DC_SHELL) $(DC_OPTS) -x "source -verbose -echo $(SYNTH_SCRIPT); exit" \
-		|& $(TEE) -a $(LOGFILE)
+$(1)opts := $(DC_OPTS)
+$(1)opts += -x "$$(foreach s,$$($(1)_SCRIPTS),source -verbose -echo $$(s);)
+ifndef $(1)_SHELL
+$(1)opts += exit;
+endif
+$(1)opts += "
 
-synth.debug: ## Runs synthesis with debug logging enabled
-synth.debug: $(BUILD_SOURCES)
-synth.debug: $(SYNTH_SCRIPT) $(DESIGN_SETUP_TCL)
-	@$(eval LOGFILE := synth.debug.log)
-	@$(eval export BSG_LOG_LEVEL := 3)
-	@$(ECHO) "Running debug synthesis" > $(LOGFILE)
-	@$(DC_SHELL) $(DC_OPTS) -x "source -verbose -echo $(SYNTH_SCRIPT);" \
-		|& $(TEE) -a $(LOGFILE)
+$(1)/%.tcl: $(BSG_PEARLS_TCL_DIR)/%.tcl
+	@$(CP) $$< $$@
+
+$(1)/synth: $$(addprefix $(1)/,$$($(1)_SCRIPTS)) syn/wrapper.pickled.sv
+
+	$(CD) $$(@D); \
+		$(DC_SHELL) $$($(1)opts)
+synth-$(1): $(1)/synth
 
 clean::
-	@$(RMRF) WORK/
-	@$(RMRF) alib-*/
-	@$(RMRF) *.rpt
-	@$(RMRF) *.svf
-	@$(RMRF) *.elab.v
-	@$(RMRF) *.gen.v
-	@$(RMRF) *.opt.v
-	@$(RMRF) *.tech.v
-	@$(RMRF) *.final.v
+	@$(RM) -rf $(1)/synth.log
+	@$(RM) -rf $$(addprefix $(1)/,$$($(1)_SCRIPTS))
+	@$(RM) -rf $(1)/default.svf
+	@$(RM) -rf $(1)/command.log
+	@$(RM) -rf $(1)/lc_shell_command.log
+	@$(RM) -rf $(1)/filenames.log
+	@$(RM) -rf $(1)/WORK/
+	@$(RM) -rf $(1)/alib-*/
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.v
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.txt
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.json
+	@$(RM) -rf $(1)/$(BSG_DESIGN).*.rpt
+
+endef
+
+DC_OPTS += -64bit
+DC_OPTS += -output_log_file synth.log
+
+basic_SCRIPTS    := bsg_pearls_setup.tcl bsg_design_setup.tcl bsg_chip_pkg.tcl bsg_utils.tcl dc_utils.tcl synthesis.dc.tcl
+
+debug_SCRIPTS    := bsg_pearls_setup.tcl bsg_design_setup.tcl bsg_chip_pkg.tcl bsg_utils.tcl dc_utils.tcl synthesis.dc.tcl
+debug_SHELL      := DEFINED
+
+iterate_SCRIPTS  := bsg_pearls_setup.tcl bsg_design_setup.tcl bsg_chip_pkg.tcl bsg_utils.tcl dc_utils.tcl
+iterate_SHELL    := DEFINED
+
+$(eval $(call bsg_fn_dc_synth,basic))
+$(eval $(call bsg_fn_dc_synth,debug))
+$(eval $(call bsg_fn_dc_synth,iterate))
 

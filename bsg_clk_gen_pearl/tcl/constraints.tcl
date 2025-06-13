@@ -284,7 +284,7 @@ proc bsg_clk_gen_pearl_constrain { cgp osc_period_ns ext_period_ns tag_period_ns
 #########################################
 proc bsg_design_constrain { design } {
     set name cgp; # clock gen pearl
-    set root ""
+    set root "chip/"
     set inst ""
 
     set osc_period_ns 10.0; # 100 MHz

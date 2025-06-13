@@ -1,0 +1,94 @@
+
+VDEFINES += BSG_NO_TIMESCALE
+
+# $(1) -> corner
+# $(2) -> toplevel
+define bsg_fn_pickle
+
+$(1)$(2)src := $(VPKG) $(1)/bsg_chip_pkg.sv $$($(1)$(2)_SOURCES)
+$(1)$(2)dep := $(1)/bsg_chip_defines.svh $(1)/bsg_chip_pkg.sv
+$(1)$(2)def := $$(addprefix +define+,$($(1)$(2)_DEFINES))
+$(1)$(2)inc := $$(addprefix +incdir+,$($(1)$(2)_INCLUDES))
+
+$(1)/$(2).inc.sv: $$($(1)$(2)dep)
+	@$(MKDIR) -p $$(@D)
+	@$(GREP) -h  "^\`include" $$($(1)$(2)src) | $(SORT) | $(UNIQ) > $$@
+
+$(1)/$(2).src.sv: $(1)/$(2).inc.sv
+	@$(MKDIR) -p $$(@D)
+	@$(CAT) $(1)/$(2).inc.sv <($(GREP) -hv "^\`include" $$($(1)$(2)src)) > $$@
+
+$(1)/$(2).pickled.sv: $(1)/$(2).src.sv
+	@$(MKDIR) -p $$(@D)
+	$(CD) $$(@D); \
+		$(MORTY) --suffix _$(1)$(2) \
+			--exclude-rename testbench \
+			--exclude-rename wrapper \
+			--exclude-rename $(BSG_DESIGN) \
+			$$($(1)$(2)def) $$($(1)$(2)inc) \
+			$$(<F) > $$(@F)
+
+clean::
+	@$(RM) -rf $$($(1)$(2)dep)
+	@$(RM) -rf $(1)/$(2).src.sv
+	@$(RM) -rf $(1)/$(2).inc.sv
+	@$(RM) -rf $(1)/$(2).pickled.sv
+
+endef
+
+# $(1) -> filelist
+# $(2) -> swaplist
+define bsg_fn_hard_swap
+$(shell \
+    for f in $(1); do \
+        name=$$(basename "$$f"); \
+        found=0; \
+        for g in $(2); do \
+            if [ "$$name" = "$$(basename "$$g")" ]; then \
+                $(ECHO) "$$g"; \
+                found=1; \
+                break; \
+            fi; \
+        done; \
+        if [ "$$found" -eq 0 ]; then \
+            $(ECHO) "$$f"; \
+        fi; \
+    done; \
+    for g in $(2); do \
+    	name=$$(basename "$$g"); \
+	found=0; \
+	for f in $(1); do \
+	    if [ "$$name" = "$$(basename "$$f")" ]; then \
+                found=1; \
+                break; \
+            fi; \
+	done; \
+	if [ "$$found" -eq 0 ]; then \
+	    $(ECHO) "$$g"; \
+	fi; \
+    done; \
+)
+endef
+
+testtestbench_SOURCES  := $(TEST_VSOURCES)
+testtestbench_DEFINES  := $(TEST_VDEFINES)
+testtestbench_INCLUDES := $(TEST_VINCLUDES)
+
+vlogwrapper_SOURCES    := $(VSOURCES) $(BSG_DESIGN_TEST_SRC_DIR)/wrapper.sv
+vlogwrapper_DEFINES    := $(VDEFINES)
+vlogwrapper_INCLUDES   := $(VINCLUDES)
+
+hardwrapper_SOURCES    := $(vlogwrapper_SOURCES)
+hardwrapper_SOURCES    := $(call bsg_fn_hard_swap,$(hardwrapper_SOURCES),$(HARD_VSOURCES))
+hardwrapper_DEFINES    := $(vlogwrapper_DEFINES) $(HARD_VDEFINES)
+hardwrapper_INCLUDES   := $(vlogwrapper_INCLUDES) $(HARD_VINCLUDES)
+
+synwrapper_SOURCES   := $(hardwrapper_SOURCES)
+synwrapper_DEFINES   := $(hardwrapper_DEFINES) SYNTHESIS
+synwrapper_INCLUDES  := $(hardwrapper_INCLUDES)
+
+$(eval $(call bsg_fn_pickle,test,testbench))
+$(eval $(call bsg_fn_pickle,vlog,wrapper))
+$(eval $(call bsg_fn_pickle,hard,wrapper))
+$(eval $(call bsg_fn_pickle,syn,wrapper))
+

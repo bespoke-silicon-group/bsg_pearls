@@ -1,5 +1,6 @@
 
-import uhdm
+from uhdm import uhdm
+from uhdm import util
 
 _UHDM_MODULE_PREFIX = "work@"
 
@@ -54,25 +55,13 @@ def parse():
             print(f"DEF: {vpiObj_defname}")
         
         
-
-    #import pprint
-    #pprint.pprint(design)
-
+#TODO: Generate hierarchy in a different file
 def hier(data):
     s = uhdm.Serializer()
 
-    print("VERSION 1")
-    module_iterator = uhdm.vpi_iterate(uhdm.uhdmtopModules, data)
-    while True:
-        vpiObj_module = uhdm.vpi_scan(module_iterator)
-        if vpiObj_module is None:
-            break
-        vpiObj_defname = uhdm.vpi_get_str(uhdm.vpiDefName, vpiObj_module)
+    for vpiObj in util.vpi_iterate_gen(uhdm.uhdmallModules,data):
+        vpiObj_defname = uhdm.vpi_get_str(uhdm.vpiDefName, vpiObj)
         print(vpiObj_defname)
-    for vpiObj_module in uhdm_test_generator(uhdm.uhdmtopModules, data):
-        vpiObj_defname = uhdm.vpi_get_str(uhdm.vpiDefName, vpiObj_module)
-        print(vpiObj_defname)
-    print("VERSION 2")
 
 
 if __name__ == "__main__":

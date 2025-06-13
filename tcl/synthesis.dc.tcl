@@ -3,24 +3,22 @@
 #####################################################
 
 # Must set these environment variables, everything else is optional (hopefully)
-set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
 set BSG_DESIGN_TCL_DIR $::env(BSG_DESIGN_TCL_DIR)
+set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
 set BSG_LOG_LEVEL      $::env(BSG_LOG_LEVEL)
-source ${BSG_CHIP_TCL_DIR}/bsg_utils.tcl
-source ${BSG_CHIP_TCL_DIR}/dc_utils.tcl
 
 #####################################################
 ## dc
 #####################################################
 bsg_dc_setup_init ${BSG_LOG_LEVEL}
 
+# suppress error message
+try {
 #####################################################
 ## STEP: bsg
 #####################################################
 set step bsg
 bsg_pr_info "Running step: ${step}"
-
-set BSG_DESIGN_SETUP_SCRIPT [bsg_get_env BSG_DESIGN_SETUP_SCRIPT design_setup.tcl]
 
 bsg_pr_info "Reading hooks"
 set BSG_DESIGN_PARAMETERS_SCRIPT [bsg_get_env BSG_DESIGN_PARAMETERS_SCRIPT ${BSG_DESIGN_TCL_DIR}/parameters.tcl]
@@ -43,8 +41,8 @@ set BSG_DESIGN_POSTFINAL_SCRIPT [bsg_get_env BSG_DESIGN_POSTFINAL_SCRIPT ${BSG_D
 #####################################################
 ## STEP: design
 #####################################################
-bsg_source_if_exists ${BSG_DESIGN_SETUP_SCRIPT}
 set step design
+bsg_pr_info "Running step: ${step}"
 
 set PDK_ROOT [bsg_get_env PDK_ROOT]
 set PDK [bsg_get_env PDK]
@@ -53,15 +51,15 @@ set PDK_CORNER [bsg_get_env PDK_CORNER]
 
 set VDEFINES [bsg_get_env VDEFINES]
 set VINCLUDES [bsg_get_env VINCLUDES]
-set VPKG [bsg_get_env VPKG]
 set VSOURCES [bsg_get_env VSOURCES]
-set HARD_VSOURCES [bsg_get_env HARD_VSOURCES]
-set HARD_NSOURCES [bsg_get_env HARD_NSOURCES]
+set NSOURCES [bsg_get_env NSOURCES]
 
+set WRAPPER [bsg_get_env WRAPPER]
 set DESIGN [bsg_get_env DESIGN]
 set GPARAMS [bsg_get_env GPARAMS]
 
 set design ${DESIGN}
+set wrapper ${WRAPPER}
 bsg_design_init ${design}
 
 #######################################################
@@ -81,7 +79,7 @@ bsg_pr_debug "Imported DBS: ${all_dbs}"
 set_app_var target_library ${all_dbs}
 set_app_var link_library "* ${target_library} ${synthetic_library}"
 
-set final_nsources ${HARD_NSOURCES}
+set final_nsources ${NSOURCES}
 set rp_designs {}
 if {${final_nsources} != ""} {
     set num_netlists [llength ${final_nsources}]
@@ -89,7 +87,7 @@ if {${final_nsources} != ""} {
     bsg_pr_debug "${final_nsources}"
     read_verilog -netlist ${final_nsources}
     set rp_designs [get_attribute [get_designs] name]
-    remove_design [get_designs]
+    set_dont_touch [get_designs] true
 }
 
 bsg_source_if_exists ${BSG_DESIGN_POSTLIBRARY_SCRIPT}
@@ -100,46 +98,47 @@ set step elab
 bsg_pr_info "Running step: ${step}"
 bsg_source_if_exists ${BSG_DESIGN_PREELAB_SCRIPT}
 
-set final_vincludes ${VINCLUDES}
-set final_vsources [bsg_source_swap ${VPKG} ${VSOURCES} ${HARD_VSOURCES} ${HARD_NSOURCES}]
-bsg_pr_debug "Include Paths: ${final_vincludes}"
-bsg_pr_debug "Source Files: ${final_vsources}"
-set_app_var search_path "${search_path} ${final_vincludes}"
-
-set design ${DESIGN}
-set final_vdefines [concat ${VDEFINES} SYNTHESIS ASIC SYNTHESIS_HARDWARE NO_DUMMY]
-bsg_pr_info "Analyzing source files for ${design}"
-analyze -define ${final_vdefines} -format sverilog ${final_vsources}
-
+set final_design ${DESIGN}
+set final_wrapper ${WRAPPER}
+set final_vsources [concat ${VSOURCES}]
+set final_vincludes [concat ${VINCLUDES}]
+set final_vdefines [concat ${VDEFINES} SYNTHESIS DC]
 set final_vparams {}
 bsg_source_if_exists ${BSG_DESIGN_PARAMETERS_SCRIPT}
 if {[llength [info procs design_extract_vparams]]} {
     append final_vparams [regsub -all { } [design_extract_vparams ${GPARAMS}] {,}]
 }
 
-bsg_pr_info "Elaborating"
-elaborate ${design} -parameters ${final_vparams}
+bsg_pr_debug "Source Files: ${final_vsources}"
+bsg_pr_debug "Include Paths: ${final_vincludes}"
+bsg_pr_info "Analyzing source files for ${final_design}"
+set_app_var search_path "${search_path} ${final_vincludes}"
+analyze -define ${final_vdefines} -format sverilog ${final_vsources}
 
-bsg_pr_info "Preserving netlists"
-foreach rp ${rp_designs} {
-    set_dont_touch [get_designs "${rp}"]
-}
+bsg_pr_info "Elaborating"
+elaborate ${final_wrapper}
 
 bsg_pr_info "Sourcing constraints"
 bsg_source_if_exists ${BSG_DESIGN_CONSTRAINTS_SCRIPT}
 
-bsg_dont_touch_cells_regex   ".*BSG_DONT_TOUCH"
-bsg_dont_gate_cells_regex    ".*BSG_NO_CLOCK_GATE"
-bsg_set_ungroup_cells_regex  ".*BSG_UNGROUP"
-bsg_set_disable_timing_regex ".*BSG_TIMING_DISABLE"
-bsg_set_size_only_regex      ".*BSG_RESIZE_OK"
+bsg_dont_touch_cells_regex   ".*BSG_DONT_TOUCH.*"
+bsg_dont_gate_cells_regex    ".*BSG_NO_CLOCK_GATE.*"
+bsg_set_ungroup_cells_regex  ".*BSG_UNGROUP.*"
+bsg_set_disable_timing_regex ".*BSG_TIMING_DISABLE.*"
+bsg_set_size_only_regex      ".*BSG_RESIZE_OK.*"
 
-if {[llength [info procs bsg_design_constrain]]} {
-    bsg_design_constrain ${design}
-}
-bsg_set_synchronizer_regex ".*BSG_SYNC1"
+# TODO: Do actual constraints
+#if {[llength [info procs bsg_design_constrain]]} {
+#    bsg_design_constrain ${final_design}
+#}
+# TODO: figure out correct constraints here
+#bsg_set_synchronizer_regex ".*BSG_SYNC1"
+#
+#check_timing > ${design}.check_timing.rpt
+#
 
-check_timing > ${design}.check_timing.rpt
+# set constrained design as toplevel
+bsg_dc_unwrap_design ${final_design} ${final_wrapper}
 
 ### write elab design
 bsg_source_if_exists ${BSG_DESIGN_POSTELAB_SCRIPT}
@@ -255,4 +254,12 @@ bsg_source_if_exists ${BSG_DESIGN_POSTFINAL_SCRIPT}
 bsg_dc_save_step ${design} ${step}
 
 bsg_pr_info "Synthesis script finished!"
+
+link
+
+} on error {msg opts} {
+    bsg_pr_error "TCL error on line [dict get ${opts} -errorline]"
+    bsg_pr_error "Stack trace:\n[dict get ${opts} -errorinfo]"
+    bsg_pr_error "Error message: ${msg}\n"
+}
 

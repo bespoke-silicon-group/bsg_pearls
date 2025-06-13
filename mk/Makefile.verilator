@@ -1,141 +1,116 @@
-# Exporting to TCL scripts
-export TOOL := VERILATOR
-
-TESTBENCH := testbench
-WRAPPER := bsg_chip
-
-VDEFINES += FUNCTIONAL
-VDEFINES += UNIT_DELAY=#1ps
-
-#VV_OPTS += --main --exe --timing
-VV_OPTS += --timescale-override 1ps/1ps
-VV_OPTS += -Wno-WIDTHEXPAND
-VV_OPTS += -Wno-UNOPTFLAT
-# Part of synth flow
-VV_OPTS += -Wno-MODDUP
-VV_OPTS += -Wno-REDEFMACRO
-VV_OPTS += -Wno-PINMISSING
-VV_OPTS += -Wno-COMBDLY
-VV_OPTS += -Wno-LATCH
-#VV_OPTS += --top-module $(TESTBENCH)
-VV_OPTS += $(addprefix +incdir+,$(VINCLUDES))
-VV_OPTS += $(addprefix +define+,$(VDEFINES))
-VV_OPTS += $(addprefix +incdir+,$(TEST_VINCLUDES))
-VV_OPTS += $(addprefix +define+,$(TEST_VDEFINES))
-# Grab any verilator command files
-VV_OPTS += $(CONFIG_VLT)
-VV_OPTS += -o simsc
-
-ifeq ($(TRACE),1)
-VV_OPTS += --trace
-VV_OPTS += --trace-structs
-VV_OPTS += --trace-fst
-TEST_VDEFINES += TRACE_ENABLE
-endif
-
-# Could generate, but there's not too many here
-SIM_LIBRARIES := pdk vpkg vlog hard syn
-SIM_CORNERS   := vlog hard syn-elab syn-gen syn-opt syn-tech syn-final
-
-CONFIG_VLT ?= default.vlt
-$(CONFIG_VLT):
-	@$(ECHO) "\`verilator_config" >> $@
-	@$(ECHO) "// Disable linting on yosys simulation libraries" >> $@
-	@$(ECHO) "lint_off -file \"*/simlib.v\"" >> $@
-
-# Verilator doesn't support verilog 2001 constructs, so we do a workaround by having
-#   a strict priority and selecting the files manually.
-# Unfortunately, this means that testbench modules must be "hardened", but short of
-#   multi-step verilation, this is still the best way I know...
-
-# Dependencies for each set of sources
-compile-vlog.log: $(VPKG) $(VSOURCES) $(TEST_VSOURCES)
-compile-hard.log: $(VPKG) $(PDK_VSOURCES) $(HARD_NSOURCES) $(HARD_VSOURCES) $(VSOURCES) $(TEST_VSOURCES)
-compile-syn-elab.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
-compile-syn-gen.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
-compile-syn-opt.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
-compile-syn-tech.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
-compile-syn-final.log: $(VPKG) $(PDK_VSOURCES) $(SYN_VSOURCES) $(HARD_NSOURCES) $(VSOURCES) $(TEST_VSOURCES)
-
-#compile-%: ## compiles simulation libraries
-#COMPILE_TGT := $(foreach c,$(SIM_CORNERS),compile-$(c))
-#$(COMPILE_TGT): $(BUILD_SOURCES)
-#$(COMPILE_TGT): compile-%: compile-%.log
-#compile-%.log: $(CONFIG_VLT)
-#	@$(eval RAW_CORNER := $*)
-#	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
-#	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
-#	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
-#	@$(eval VV_OPTS += +define+BSG_CHIP_DUT_NAME=$(DUT_NAME))
-#	@$(ECHO) "Compiling $*" > $@
-#	@$(VERILATOR) $(VV_OPTS) $(filter-out $<,$^) -Mdir obj_dir-$* -o simsc |& $(TEE) -a $@
 
 
-dut-compile: $(VPKG) $(VSOURCES)
-dut-compile: $(CONFIG_VLT)
-	@$(eval RAW_CORNER := vlog)
-	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
-	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
-	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
-	@$(eval VV_OPTS += --cc --build --timing)
-	@$(eval VV_OPTS += --top-module $(DUT_NAME))
-	@$(eval VV_OPTS += --prefix $(DUT_NAME)_vlog)
-	@$(eval VV_OPTS += -Mdir obj_dir-dut)
-	$(VERILATOR) --verilate-jobs 32 $(VV_OPTS) $(VPKG) $(VSOURCES) $<
-
-testbench-compile:
-	@$(eval RAW_CORNER := vlog)
-	@$(eval CONFIG_TYPE := $(firstword $(subst -, ,$(RAW_CORNER))))
-	@$(eval DUT_CORNER := $(lastword $(subst -, ,$(RAW_CORNER))))
-	@$(eval DUT_NAME := $(if $(filter syn,$(CONFIG_TYPE)),$(BSG_DESIGN)_$(DUT_CORNER),$(WRAPPER)))
-	@$(eval VV_OPTS += +define+BSG_CHIP_DUT_NAME=$(DUT_NAME)_vlog)
-	@$(eval VV_OPTS += --cc --build --timing)
-	@$(eval VV_OPTS += --top-module testbench)
-	@$(eval VV_OPTS += -Mdir obj_dir-testbench)
-	echo "$(DUT_NAME) is $(DUT_NAME)"
-	$(VERILATOR) \
-		--verilate-jobs 32 $(VV_OPTS) $(VPKG) $(TEST_VSOURCES) $(CURDIR)/obj_dir-dut/libbsg_chip_vlog.a
-
-# Dependencies for each set of sources
-build-vlog.log     : compile-vlog
-build-hard.log     : compile-hard
-build-syn-elab.log : compile-syn-elab
-build-syn-gen.log  : compile-syn-gen
-build-syn-opt.log  : compile-syn-opt
-build-syn-tech.log : compile-syn-tech
-build-syn-final.log: compile-syn-final
+# $(1) -> corner
 build-%: ## builds a simulation (build-<CORNER>) for individual corner
-BUILD_TGT := $(foreach c,$(SIM_CORNERS),build-$(c))
-$(BUILD_TGT): $(BUILD_SOURCES)
-$(BUILD_TGT): build-%: build-%.log
-build-%.log:
-	@$(ECHO) "Building verilator model" > $@
-	@$(MAKE) -C obj_dir-$* -f V$(TESTBENCH).mk |& $(TEE) -a $@
+define bsg_fn_verilator_build
+ifndef $(0)$(1)
+$(0)$(1) := DEFINED
+
+$(1)BUILD_OPTS := $(VV_BUILD_OPTS)
+ifeq ($(TRACE),1)
+$(1)BUILD_OPTS += --trace --trace-structs --trace-fst
+endif
+$(1)BUILD_OPTS += $(addprefix +define+,$(VDEFINES) $(TEST_VDEFINES))
+
+$(1)cfg := \
+	$(wildcard $(BSG_PEARLS_SRC_DIR)/*.vlt) $(wildcard $(BSG_PEARLS_TEST_SRC_DIR)/*.vlt) \
+	$(wildcard $(BSG_DESIGN_SRC_DIR)/*.vlt) $(wildcard $(BSG_DESIGN_TEST_SRC_DIR)/*.vlt)
+
+$(1)/config.vlt: $$($(1)cfg)
+	@$(ECHO) "\`verilator_config" >> $$@
+	@$(CAT) $$^ >> $$@
+
+$(1)/simsc: $(1)/config.vlt test/testbench.pickled.sv $(1)/wrapper.pickled.sv $(HARD_NSOURCES) $(PDK_NSOURCES)
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		$(VERILATOR) $$($(1)BUILD_OPTS) $$(abspath $$^) | $(TEE) -i build.log
+build-$(1): $(1)/simsc
+
+clean::
+	@$(RM) -rf $(1)/simsc
+	@$(RM) -rf $(1)/obj_dir
+	@$(RM) -rf $(1)/build.log
+	@$(RM) -rf $(1)/config.vlt
+
+endif
+endef
 
 VV_RUN_OPTS +=
 
-run-%: ## runs a simulation (run-<CORNER>) for individual corner
-RUN_TGT := $(foreach c,$(SIM_CORNERS),run-$(c))
-$(RUN_TGT): $(RUN_SOURCES)
-$(RUN_TGT): run-%: run-%.log
-run-%.log: build-%.log
-	@$(eval RAW_CORNER := $*)
-	@$(eval SIMSC_BIN := obj_dir-$(RAW_CORNER)/simsc)
-	@$(eval RUN_ARGS += +bsg_trace=dump-$*.fst)
-	@$(ECHO) "Running simulation with $(RUN_ARGS)" > $@
-	@./$(SIMSC_BIN) $(VV_RUN_OPTS) $(RUN_ARGS) |& $(TEE) -a $@
+# $(1) -> corner
+# $(2) -> name
+# $(3) -> tag trace
+# $(4) -> test trace
+define bsg_fn_verilator_sim
 
-VIEW_TGT := $(foreach c,$(SIM_CORNERS),view-$(c))
-view-%: ## opens a .fst dump in Surfer
-$(VIEW_TGT): view-%: dump-%.fst
+$(eval $(call bsg_fn_chip_gen,test))
+$(eval $(call bsg_fn_chip_gen,$(1)))
+
+$(eval $(call bsg_fn_pickle,test,testbench))
+$(eval $(call bsg_fn_pickle,$(1),wrapper))
+
+$(eval $(call bsg_fn_verilator_build,$(1)))
+
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(3)))
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(4)))
+
+$(1)$(2)PLUSARGS += +TAG_TRACE=$(3).tr
+$(1)$(2)PLUSARGS += +TEST_TRACE=$(4).tr
+
+$(1)$(2)RUN_OPTS := $(VV_RUN_OPTS)
+
+$(1)$(2)DUMPFILE := dump.fst
 ifeq ($(ENABLE_SURFER),1)
-	@$(SURFER) $<
+$(1)$(2)VIEWCMD := $(SURFER) $$($(1)$(2)DUMPFILE)
 else
-	@$(GTKWAVE) -f $<
+$(1)$(2)VIEWCMD := $(GTKWAVE) -f $$($(1)$(2)DUMPFILE)
 endif
 
+ifeq ($(TRACE),1)
+$(1)$(2)RUN_OPTS += +bsg_trace=$$($(1)$(2)DUMPFILE)
+endif
+
+$(1)/$(2)/run: $(1)/simsc $(1)/$(2)/$(3).tr $(1)/$(2)/$(4).tr
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		../$$(<F) $$($(1)$(2)RUN_OPTS) $$($(1)$(2)PLUSARGS) | $(TEE) -i run.log
+run-$(1)-$(2): $(1)/$(2)/run
+
+$(1)/$(2)/view: $(1)/$(2)/$$($(1)$(2)DUMPFILE)
+	@$(CD) $$(@D); \
+		$$($(1)$(2)VIEWCMD) $$(<F) &
+view-$(1)-$(2): $(1)/$(2)/view
+
 clean::
-	@$(RMRF) obj_dir-*/
-	@$(RMRF) $(CONFIG_VLT)
-	@$(RMRF) *.fst *.fst.hier
+	@$(RM) -rf $(1)/$(2)/run.log
+	@$(RM) -rf $(1)/$(2)/$(3).tr
+	@$(RM) -rf $(1)/$(2)/$(4).tr
+	@$(RM) -rf $(1)/$(2)/$$($(1)$(2)DUMPFILE)
+endef
+
+VERILATOR_THREADS ?= 4
+#VV_BUILD_OPTS += --debug --gdbbt --no-debug-leak
+VV_BUILD_OPTS += --binary
+VV_BUILD_OPTS += -O2
+VV_BUILD_OPTS += --x-assign fast --x-initial fast
+VV_BUILD_OPTS += -j $(VERILATOR_THREADS)
+VV_BUILD_OPTS += --timescale 1ps/1ps
+VV_BUILD_OPTS += -Wno-WIDTHEXPAND
+VV_BUILD_OPTS += -Wno-MISINDENT
+VV_BUILD_OPTS += --waiver-output test.waiver
+# Part of synth flow
+#VV_BUILD_OPTS += -Wno-MODDUP
+#VV_BUILD_OPTS += -Wno-REDEFMACRO
+#VV_BUILD_OPTS += -Wno-PINMISSING
+#VV_BUILD_OPTS += -Wno-COMBDLY
+#VV_BUILD_OPTS += -Wno-LATCH
+# https://github.com/verilator/verilator/pull/6241
+VV_BUILD_OPTS += --assert --no-stop-fail
+VV_BUILD_OPTS += --stats --stats-vars
+VV_BUILD_OPTS += --top-module testbench
+#VV_BUILD_OPTS += --top-module testbench
+VV_BUILD_OPTS += -o ../simsc
+
+$(eval $(call bsg_fn_verilator_build,vlog,testbench,wrapper))
+$(eval $(call bsg_fn_verilator_build,hard,testbench,wrapper))
 

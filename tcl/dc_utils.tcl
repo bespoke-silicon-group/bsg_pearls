@@ -17,6 +17,8 @@ proc bsg_dc_setup_init { log_level } {
     suppress_message UCN-4
     # We always use DesignWare
     suppress_message UISN-40
+    # Suppress BSG_ABSTRACT_MODULE warning
+    suppress_message VER-988
 
     set_app_var timing_enable_multiple_clocks_per_reg false
     set_app_var hdlin_ff_always_sync_set_reset true
@@ -53,14 +55,20 @@ proc bsg_dc_convert_libs { libs } {
     return ${all_dbs}
 }
 
-# This proc isn't currently used, but is useful for parameter pushing
-proc bsg_dc_unwrap_design { wrapper design } {
+proc bsg_dc_unwrap_design { design wrapper } {
     bsg_pr_info "Unwrapping ${wrapper}"
-
-    set inst [get_cells * -filter "hdl_template=~${design}"]
-    set_ungroup ${inst}
-    ungroup -simple_names ${inst}
+    set design_ref [get_attribute [get_cells * -filter "hdl_template=~${design}"] ref_name]
+    rename_design ${design_ref} ${design}
+    current_design ${design}
     bsg_pr_info "Toplevel is now ${design}"
+
+    bsg_pr_info "Generating wrapper verilog"
+    write_file -format verilog -output ${design}.wrapper.v ${wrapper}
+    set sed_command "s|${design}|`BSG_CHIP_DUT_NAME|g"
+    exec -- sed -i ${sed_command} ${design}.wrapper.v
+
+    bsg_pr_info "Deleting ${wrapper}"
+    remove_design ${wrapper}
 
     return ${design}
 }
@@ -121,7 +129,9 @@ proc _bsg_set_size_only_impl { cells } {
 }
 
 proc _bsg_set_disable_timing_impl { cells } {
-    set_disable_timing ${cells}
+    foreach_in_collection c ${cells} {
+        set_disable_timing $c
+    }
 }
 
 proc _bsg_set_synchronizer_impl { cells } {

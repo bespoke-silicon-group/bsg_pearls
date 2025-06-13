@@ -1,6 +1,6 @@
 
 VPKG += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_pkg.sv
-VPKG += $(BSG_CLK_GEN_PEARL_DIR)/bsg_clk_gen_pearl_pkg.sv
+VPKG += $(BSG_CLK_GEN_PEARL_DIR)/v/bsg_clk_gen_pearl_pkg.sv
 
 VINCLUDES += $(BSG_PEARLS_DIR)
 VINCLUDES += $(BSG_PEARLS_SRC_DIR)
@@ -10,11 +10,14 @@ VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_clk_gen
 VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_misc
 VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_tag
 
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_launch_sync_sync.sv
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_sync_sync.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_misc/bsg_defines.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_launch_sync_sync.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_sync_sync.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_sync_sync_unit.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_async/bsg_sync_sync_async_reset_unit.sv
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_clk_gen_v3.sv
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_clk_gen/bsg_clk_gen_osc_v3.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_clk_gen/bsg_clk_gen_osc_v3.sv
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_parallel_in_serial_out.sv
@@ -25,15 +28,15 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1r1w_synth.sv
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_buf.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_clkbuf.sv
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_mux.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_misc/bsg_mux.sv
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_master_decentralized.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_client.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_client_unsync.sv
 
-VSOURCES += $(BSG_CLK_GEN_PEARL_DIR)/bsg_clk_gen_pearl.sv
-VSOURCES += $(BSG_CLK_GEN_PEARL_DIR)/bsg_clk_gen_pearl_lfsr_div30.sv
-VSOURCES += $(BSG_CLK_GEN_PEARL_DIR)/bsg_clk_gen_pearl_monitor.sv
+VSOURCES += $(BSG_CLK_GEN_PEARL_DIR)/v/bsg_clk_gen_pearl.sv
+VSOURCES += $(BSG_CLK_GEN_PEARL_DIR)/v/bsg_clk_gen_pearl_lfsr_div30.sv
+VSOURCES += $(BSG_CLK_GEN_PEARL_DIR)/v/bsg_clk_gen_pearl_monitor.sv
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_counter_clock_downsample.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_counter_clear_up.sv
@@ -47,7 +50,7 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_xnor.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_muxi2_gatestack.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_nand.sv
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_nor3.sv
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_reduce.sv
+VSOURCES += $(BASEJUMP_STL_BETA_DIR)/bsg_misc/bsg_reduce.sv
 
 HARD_VSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_async/bsg_launch_sync_sync.sv
 HARD_VSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_async/bsg_sync_sync.sv
@@ -65,4 +68,6 @@ HARD_VSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_misc/bsg_mux.sv
 
 HARD_NSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_clk_gen/bsg_rp_clk_gen_osc_unit_v3.v
 HARD_NSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_clk_gen/bsg_rp_clk_gen_osc_v3.v
+
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
 

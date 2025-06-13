@@ -7,7 +7,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "..", "py"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "test", "py"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "py"))
 
-from bsg_chip_pkg import BsgClkGenPearlPkg
+from bsg_chip_pkg import BsgClkGenPearlPkg as BsgChipPkg
 from bsg_trace_replay import BsgTraceField, BsgTraceStruct, BsgTraceReplayGen
 from bsg_tag_trace_replay import BsgTagTraceReplayGen
 

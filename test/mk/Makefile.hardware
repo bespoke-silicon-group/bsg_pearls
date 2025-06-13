@@ -1,0 +1,25 @@
+
+ifeq ($(TOOL)$(TRACE)$(ENABLE_VERDI),vcs11)
+TEST_VDEFINES += TRACE_ENABLE FSDB_ENABLE
+endif
+ifeq ($(TOOL)$(TRACE)$(ENABLE_VERDI),vcs10)
+TEST_VDEFINES += TRACE_ENABLE VPD_ENABLE
+endif
+ifeq ($(TOOL)$(TRACE),verilator1)
+TEST_VDEFINES += TRACE_ENABLE FST_ENABLE
+endif
+
+TEST_VDEFINES += BSG_NO_TIMESCALE
+TEST_VDEFINES += FUNCTIONAL
+
+TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_nonsynth_test_rom_plusargs.sv
+#TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_nonsynth_waveform_tracer.sv
+#TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_nonsynth_assert.sv
+TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/bsg_chip_tester.sv
+TEST_VSOURCES += $(BSG_PEARLS_TEST_SRC_DIR)/testbench.sv
+
+SIMLIB += $(PDK_ROOT)/$(PDK)/libs.ref/$(PDK_LIB)/verilog/$(PDK_LIB).v
+SIMLIB += $(BSG_PEARLS_TEST_SRC_DIR)/primitives.v
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
+
