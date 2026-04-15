@@ -291,9 +291,10 @@ proc bsg_design_constrain { design } {
     set ext_period_ns 100.0; # 10 MHz
     set tag_period_ns 50.0; # 20 MHz
 
-    set cgp [bsg_clk_gen_pearl_create ${name} ${root} ${inst}]
-    set cgp [bsg_clk_gen_pearl_populate ${cgp}]
-    set cgp [bsg_clk_gen_pearl_constrain ${cgp} ${osc_period_ns} ${ext_period_ns} ${tag_period_ns}]
+    #set cgp [bsg_clk_gen_pearl_create ${name} ${root} ${inst}]
+    #set cgp [bsg_clk_gen_pearl_populate ${cgp}]
+    #set cgp [bsg_clk_gen_pearl_constrain ${cgp} ${osc_period_ns} ${ext_period_ns} ${tag_period_ns}]
+    set cgp {}
 
     return ${cgp}
 }

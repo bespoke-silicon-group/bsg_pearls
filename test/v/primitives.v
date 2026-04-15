@@ -1,8 +1,9 @@
+`timescale 1ps/1ps
 
-`define PRIM_UNIT_NULL_DELAY #0ps
-`define PRIM_UNIT_COMB_DELAY #1ps
-`define PRIM_UNIT_SEQ_DELAY  #1ps
-`define PRIM_UNIT_CLK_DELAY  #1ps
+`define PRIM_UNIT_NULL_DELAY #0
+`define PRIM_UNIT_COMB_DELAY #1
+`define PRIM_UNIT_SEQ_DELAY  #1
+`define PRIM_UNIT_CLK_DELAY  #1
 
 module sky130_fd_sc_hd__udp_dff$NSR (
     Q    ,

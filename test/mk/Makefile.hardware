@@ -1,4 +1,5 @@
 
+TEST_VDEFINES += UNIT_DELAY
 TEST_VDEFINES += FUNCTIONAL
 TEST_VDEFINES += BSG_NO_TIMESCALE
 
@@ -12,7 +13,12 @@ SIMLIB += $(PDK_ROOT)/$(PDK)/libs.ref/$(PDK_LIB)/verilog/$(PDK_LIB).v
 SIMLIB += $(BSG_PEARLS_TEST_SRC_DIR)/primitives.v
 
 vlog_LIBLISTS := vpkg vlog test
-hard_LIBLISTS := vpkg vpdk hard vlog test
+hard_LIBLISTS := vpdk vpkg hard vlog test
+
+VINCLUDES += $(CURDIR)/work
+
+VSOURCES      += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip.sv
+HARD_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip.sv
 
 define bsg_fn_config_gen
 
@@ -22,7 +28,7 @@ work/vlog/flist.txt: $$(VSOURCES) | $$(VINCLUDES)
 work/test/flist.txt: $$(TEST_VSOURCES) | $$(VINCLUDES) $$(TEST_VINCLUDES)
 work/hard/flist.txt: $$(HARD_VSOURCES) $$(HARD_NSOURCES) | $$(VINCLUDES) $$(HARD_VINCLUDES)
 
-LIBMAP_CORNERS := vpdk vpkg vlog test hard
+LIBMAP_CORNERS := vpdk vpkg hard vlog test
 LIBMAP_FLISTS := $$(foreach x,$$(LIBMAP_CORNERS),work/$$(x)/flist.txt)
 
 BUILD_SOURCES += $$(LIBMAP_FLISTS)
@@ -34,12 +40,13 @@ BUILD_SOURCES += $$(LIBMAP_FLISTS)
 		$(ECHO) "+define+$$$$item" >> $$@; \
 	done
 	@for item in $$|; do \
-		$(ECHO) "+incdir+`realpath --relative-to=$(CURDIR)/work $$$$item`" >> $$@; \
+		$(ECHO) "+incdir+$$$$item" >> $$@; \
 	done
 	@for item in $$(abspath $$^); do \
 		$(ECHO) "$$(@D:work/%=%)/`basename $$$$item`" >> $$@; \
 		$(SYMLINK) "$$$$item" $$(@D)/; \
 	done
+	@$(SED) -i "s#$(BSG_PEARLS_DIR)#\$$$$BSG_PEARLS_DIR#g" $$@
 
 clean::
 	@$(RMRF) work/vpdk

@@ -90,53 +90,30 @@ proc bsg_dc_save_step { design step } {
 }
 
 proc _bsg_get_name_impl { cells } {
-    return [get_attribute ${cells} name]
-}
-
-proc _bsg_get_full_name_impl { cells } {
     return [get_attribute ${cells} full_name]
 }
 
 proc _bsg_dont_touch_cells_impl { cells } {
-    set_dont_touch ${cells}    
+    bsg_pr_warn "_bsg_dont_touch_cells_impl not implemented, called on:\n\t$cells"
 }
 
-proc _bsg_dont_gate_cells_impl { cells} {
-    set_clock_gating_objects -exclude ${cells}
+proc _bsg_dont_gate_cells_impl { cells } {
+    bsg_pr_warn "_bsg_dont_gate_cells_impl not implemented, called on:\n\t$cells"
 }
 
 proc _bsg_set_ungroup_cells_impl { cells } {
-    set_ungroup ${cells}
+    bsg_pr_warn "_bsg_set_ungroup_cells_impl not implemented, called on:\n\t$cells"
 }
 
 proc _bsg_set_size_only_impl { cells } {
-    foreach_in_collection c ${cells} {
-        if {[get_attribute $c is_hierarchical]} {
-            set leafs [get_cells "[bsg_get_full_name $c]/*"]
-            _bsg_set_size_only_impl ${leafs}
-        } else {
-            set_size_only -all_instances $c
-        }
-    }
+    bsg_pr_warn "_bsg_set_size_only_impl not implemented, called on:\n\t$cells"
 }
 
 proc _bsg_set_disable_timing_impl { cells } {
-    set_disable_timing ${cells}
+    bsg_pr_warn "_bsg_set_disable_timing_impl not implemented, called on:\n\t$cells"
 }
 
 proc _bsg_set_synchronizer_impl { cells } {
-    foreach_in_collection s1 ${cells} {
-        set cpins [get_pins -of_objects ${s1} -filter "direction==in&&is_clock_pin==true"]
-        set ipins [get_pins -of_objects ${s1} -filter "direction==in&&is_data_pin==true"]
-        set opins [get_pins -of_objects ${s1} -filter "direction==out"]
-        
-        set oclk [get_attribute ${cpins} clocks]
-        set operiod_ns [get_attribute ${oclk} period]
-        set max_delay_ns [expr ${operiod_ns} / 2]
-        set min_delay_ns [expr ${operiod_ns} / -10]
-
-        set_max_delay ${max_delay_ns} -to ${ipins} -ignore_clock_latency
-        set_min_delay ${min_delay_ns} -to ${ipins} -ignore_clock_latency
-    }
+    bsg_pr_warn "_bsg_set_synchronizer_impl not implemented, called on:\n\t$cells"
 }
 

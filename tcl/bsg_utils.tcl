@@ -176,13 +176,14 @@ proc bsg_get_name { args } {
     return [_bsg_get_name_impl ${args}]
 }
 
-proc bsg_get_full_name { args } {
-    return [_bsg_get_full_name_impl ${args}]
+proc bsg_get_cells { regex } {
+    return [_bsg_get_cells_impl ${regex}]
 }
 
 proc bsg_dont_touch_cells_regex { regex } {
-    set cells [get_cells -quiet -hier -regexp "${regex}"]
-    if {[sizeof_collection ${cells}]} {
+    set cells [bsg_get_cells "${regex}"]
+    bsg_pr_info "dont touch cells $cells"
+    if {[sizeof_collection ${cells}] > 0} {
         bsg_pr_info "Setting dont_touch on ${regex}"
         bsg_pr_debug "\t[bsg_get_name ${cells}]"
         _bsg_dont_touch_cells_impl ${cells}
@@ -191,53 +192,53 @@ proc bsg_dont_touch_cells_regex { regex } {
 }
 
 proc bsg_dont_gate_cells_regex { regex } {
-    set cells [get_cells -quiet -hier -regexp "${regex}"]
-    if {[sizeof_collection ${cells}]} {
+    set cells [bsg_get_cells "${regex}"]
+    if {[sizeof_collection ${cells}] > 0} {
         bsg_pr_info "Setting dont_gate on ${regex}"
         bsg_pr_debug "\t[bsg_get_name ${cells}]"
         _bsg_dont_gate_cells_impl ${cells}
     }
-    set ::G_BSG_INFO(CELLS_DONT_GATE) [bsg_get_full_name ${cells}]
+    set ::G_BSG_INFO(CELLS_DONT_GATE) [bsg_get_name ${cells}]
 }
 
 proc bsg_set_ungroup_cells_regex { regex } {
-    set cells [get_cells -quiet -hier -regexp "${regex}"]
-    if {[sizeof_collection ${cells}]} {
+    set cells [bsg_get_cells "${regex}"]
+    if {[sizeof_collection ${cells}] > 0} {
         bsg_pr_info "Setting ungroup on ${regex}"
         bsg_pr_debug "\t[bsg_get_name ${cells}]"
         _bsg_set_ungroup_cells_impl ${cells}
     }
-    set ::G_BSG_INFO(CELLS_UNGROUP) [bsg_get_full_name ${cells}]
+    set ::G_BSG_INFO(CELLS_UNGROUP) [bsg_get_name ${cells}]
 }
 
 proc bsg_set_size_only_regex { regex } {
-    set cells [get_cells -quiet -hier -regexp "${regex}"]
-    if {[sizeof_collection ${cells}]} {
+    set cells [bsg_get_cells "${regex}"]
+    if {[sizeof_collection ${cells}] > 0} {
         bsg_pr_info "Setting resize_only on ${regex}"
         bsg_pr_debug "\t[bsg_get_name ${cells}]"
         _bsg_set_size_only_impl ${cells}
     }
-    set ::G_BSG_INFO(CELLS_SIZE_ONLY) [bsg_get_full_name ${cells}]
+    set ::G_BSG_INFO(CELLS_SIZE_ONLY) [bsg_get_name ${cells}]
 }
 
 proc bsg_set_disable_timing_regex { regex } {
-    set cells [get_cells -quiet -hier -regexp "${regex}"]
-    if {[sizeof_collection ${cells}]} {
+    set cells [bsg_get_cells "${regex}"]
+    if {[sizeof_collection ${cells}] > 0} {
         bsg_pr_info "Setting disable_timing on ${regex}"
         bsg_pr_debug "\t[bsg_get_name ${cells}]"
         _bsg_set_disable_timing_impl ${cells}
     }
-    set ::G_BSG_INFO(CELLS_DISABLE_TIMING) [bsg_get_full_name ${cells}]
+    set ::G_BSG_INFO(CELLS_DISABLE_TIMING) [bsg_get_name ${cells}]
 }
 
 proc bsg_set_synchronizer_regex { regex } {
-    set cells [get_cells -quiet -hier -regexp "${regex}"]
-    if {[sizeof_collection ${cells}]} {
+    set cells [bsg_get_cells "${regex}"]
+    if {[sizeof_collection ${cells}] > 0} {
         bsg_pr_info "Setting synchronizer on ${regex}"
         bsg_pr_info "\t(CDC constraints still required)"
         bsg_pr_debug "\t[bsg_get_name ${cells}]"
         _bsg_set_synchronizer_impl ${cells}
     }
-    set ::G_BSG_INFO(CELLS_SYNCHRONIZER) [bsg_get_full_name ${cells}]
+    set ::G_BSG_INFO(CELLS_SYNCHRONIZER) [bsg_get_name ${cells}]
 }
 

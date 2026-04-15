@@ -1,0 +1,57 @@
+# Set up the design
+include $(BSG_DESIGN_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
+
+# $(1) -> synthesis tag
+define bsg_fn_genus_synth
+
+$(1)_GENUS_OPTS := $(GENUS_OPTS)
+$(1)_GENUS_OPTS += -no_gui
+$(1)_GENUS_OPTS += -wait 120
+$(1)_GENUS_OPTS += $$(foreach s,$$($(1)_SCRIPTS),-files $$(subst $(1)/,,$$(s)))
+
+$(1)_SYNTH_LOG := $(abspath $(1)/synth.log)
+BUILD_SOURCES += $$($(1)_SCRIPTS)
+
+$(1)/synth: | $$(BUILD_SOURCES)
+	@$(MKDIR) -p $$(@D)
+	@$(ECHO) "set ::env(BSG_LOG_LEVEL) $$($(1)_LOG_LEVEL)" >> $(1)/bsg_design_setup.tcl
+	$(CD) $$(@D); \
+		$(GENUS) $$($(1)_GENUS_OPTS) -log $$($(1)_SYNTH_LOG)
+synth-$(1): $(1)/synth
+
+clean::
+	@$(RMRF) $(1)
+
+endef
+
+basic_SCRIPTS   :=
+basic_SCRIPTS   += basic/bsg_pearls_setup.tcl
+basic_SCRIPTS   += basic/bsg_design_setup.tcl
+basic_SCRIPTS   += basic/bsg_chip_pkg.tcl
+basic_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.genus.tcl
+basic_LOG_LEVEL := 2
+
+debug_SCRIPTS   :=
+debug_SCRIPTS   += debug/bsg_pearls_setup.tcl
+debug_SCRIPTS   += debug/bsg_design_setup.tcl
+debug_SCRIPTS   += debug/bsg_chip_pkg.tcl
+debug_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.genus.tcl
+debug_LOG_LEVEL := 99
+debug_SHELL     := 1
+
+iterate_SCRIPTS   :=
+iterate_SCRIPTS   += iterate/bsg_pearls_setup.tcl
+iterate_SCRIPTS   += iterate/bsg_design_setup.tcl
+iterate_SCRIPTS   += iterate/bsg_chip_pkg.tcl
+iterate_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.genus.tcl
+iterate_SHELL     := 1
+iterate_LOG_LEVEL := 1
+

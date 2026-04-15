@@ -3,10 +3,10 @@
 
 module bsg_chip
  import bsg_chip_pkg::*;
- #(parameter `BSG_INV_PARAM(ds_width_p)
-   , parameter `BSG_INV_PARAM(num_taps_p)
-   , parameter `BSG_INV_PARAM(tag_els_p)
-   , parameter `BSG_INV_PARAM(tag_lg_width_p)
+ #(parameter ds_width_p = ds_width_gp
+   , parameter num_taps_p = num_taps_gp
+   , parameter tag_els_p = tag_els_gp
+   , parameter tag_lg_width_p = tag_lg_width_gp
    , localparam tag_lg_els_lp = `BSG_SAFE_CLOG2(tag_els_p)
    )
   (input                                    ext_clk_i

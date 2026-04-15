@@ -3,11 +3,11 @@
 #####################################################
 
 # Must set these environment variables, everything else is optional (hopefully)
-set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
-set BSG_DESIGN_TCL_DIR $::env(BSG_DESIGN_TCL_DIR)
-set BSG_LOG_LEVEL      $::env(BSG_LOG_LEVEL)
-source ${BSG_CHIP_TCL_DIR}/bsg_utils.tcl
-source ${BSG_CHIP_TCL_DIR}/yosys_utils.tcl
+set BSG_PEARLS_TCL_DIR   $::env(BSG_PEARLS_TCL_DIR)
+set BSG_DESIGN_TCL_DIR   $::env(BSG_DESIGN_TCL_DIR)
+set BSG_LOG_LEVEL        $::env(BSG_LOG_LEVEL)
+source ${BSG_PEARLS_TCL_DIR}/bsg_utils.tcl
+source ${BSG_PEARLS_TCL_DIR}/yosys_utils.tcl
 
 #####################################################
 ## Tool setup
@@ -57,10 +57,12 @@ set HARD_VSOURCES [bsg_get_env HARD_VSOURCES]
 set HARD_NSOURCES [bsg_get_env HARD_NSOURCES]
 
 set DESIGN [bsg_get_env DESIGN]
+set WRAPPER [bsg_get_env WRAPPER]
 set GPARAMS [bsg_get_env GPARAMS]
 
 set design ${DESIGN}
-bsg_design_init ${design}
+set wrapper ${WRAPPER}
+bsg_design_init ${wrapper}
 
 #####################################################
 ## STEP: library
@@ -105,8 +107,8 @@ set step elab
 bsg_pr_info "Running step: ${step}"
 bsg_source_if_exists ${BSG_DESIGN_PREELAB_SCRIPT}
 
-set design ${DESIGN}
-
+set final_design [string trim ${DESIGN}]
+set final_wrapper [string trim ${WRAPPER}]
 set final_vsources [bsg_source_swap ${VPKG} ${VSOURCES} ${HARD_VSOURCES} {}]
 set final_vincludes ${VINCLUDES}
 set final_vdefines [concat ${VDEFINES} BSG_NO_TIMESCALE SYNTHESIS]
@@ -117,18 +119,37 @@ if {[llength [info procs design_extract_vparams]]} {
 }
 
 bsg_yosys_read_design_slang \
-    ${design} \
+    ${final_wrapper} \
     ${final_vsources} \
     ${final_vdefines} \
     ${final_vincludes} \
     ${final_vparams}
 
 # elaborate design hierarchy
-yosys hierarchy -check -top ${design}
+yosys hierarchy -check -top ${final_wrapper}
+
+# set design as toplevel
+bsg_yosys_unwrap_design ${final_wrapper} ${final_design}
+
+# TODO: Implement each of these in genus and yosys
+bsg_pr_info "ABCD"
+bsg_dont_touch_cells_regex   "*BSG_DONT_TOUCH*"
+bsg_dont_gate_cells_regex    "*BSG_NO_CLOCK_GATE*"
+bsg_set_ungroup_cells_regex  "*BSG_UNGROUP*"
+bsg_set_disable_timing_regex "*BSG_TIMING_DISABLE*"
+bsg_set_size_only_regex      "*BSG_RESIZE_OK*"
+
+# yosys is not constraint driven currently
+if {[llength [info procs bsg_design_constrain]]} {
+	bsg_design_constrain ${design}
+}
+
+parray ::G_BSG_INFO
+exit
 
 # write elab design
 bsg_source_if_exists ${BSG_DESIGN_POSTELAB_SCRIPT}
-bsg_yosys_save_step ${design} ${step}
+bsg_yosys_save_step ${wrapper} ${step}
 #####################################################
 ## STEP: gen
 #####################################################

@@ -9,18 +9,21 @@ include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
 include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
 include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
 
-
 # $(1) -> corner
 define bsg_fn_verilator_build
 
 $(1)_VV_OPTS := $$(VV_OPTS)
 $(1)_VV_OPTS += --binary
 $(1)_VV_OPTS += --timescale 1ns/1ps
+$(1)_VV_OPTS += -no-sched-zero-delay
 $(1)_VV_OPTS += $$(foreach x,$$($(1)_LIBLISTS),-f $$(x)/flist.txt)
-$(1)_VV_OPTS += -Mdir $(1)
-$(1)_VV_OPTS += --top-module config_$(1)
+$(1)_VV_OPTS += -Mdir $(1)/obj_dir
 $(1)_VV_OPTS += $(BSG_PEARLS_TEST_SRC_DIR)/default.vlt
-$(1)_VV_OPTS += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config.v
+# This is a bug with configs in verilator.
+# We should be able to have a single config
+$(1)_VV_OPTS += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config-$(1).v
+$(1)_VV_OPTS += --top-module config_$(1)
+#$(1)_VV_OPTS += --debug
 
 ifeq ($(TRACE),1)
 $(1)_VV_OPTS += --trace
@@ -39,11 +42,11 @@ endif
 
 $(1)_VV_LOG := $(abspath $(1)/build.log)
 
-$(1)/simsc: | $(BUILD_SOURCES)
+$(1)/simsc: | $$(BUILD_SOURCES)
 	@$(MKDIR) -p $$(@D)
 	@$(CD) work/; \
 		$(VERILATOR) $$($(1)_VV_OPTS) -o $$(@F) |& $(TEE) $$($(1)_VV_LOG)
-	@$(SYMLINK) ../work/$(1)/$$(@F) $$@
+	@$(SYMLINK) ../work/$(1)/obj_dir/$$(@F) $$@
 
 build-$(1): $(1)/simsc
 

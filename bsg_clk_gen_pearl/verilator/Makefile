@@ -23,7 +23,7 @@ $(eval $(call bsg_fn_verilator_build,vlog))
 $(eval $(call bsg_fn_verilator_build,hard))
 
 $(eval $(call bsg_fn_verilator_sim,vlog,testA,tag_boot,test1))
-#$(eval $(call bsg_fn_verilator_sim,hard,testA,tag_boot,test1))
+$(eval $(call bsg_fn_verilator_sim,hard,testA,tag_boot,test1))
 
 $(eval $(call bsg_fn_verilator_coverage,vlog))
 

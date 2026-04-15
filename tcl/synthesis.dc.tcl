@@ -3,11 +3,11 @@
 #####################################################
 
 # Must set these environment variables, everything else is optional (hopefully)
-set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
-set BSG_DESIGN_TCL_DIR $::env(BSG_DESIGN_TCL_DIR)
-set BSG_LOG_LEVEL      $::env(BSG_LOG_LEVEL)
-source ${BSG_CHIP_TCL_DIR}/bsg_utils.tcl
-source ${BSG_CHIP_TCL_DIR}/dc_utils.tcl
+set BSG_PEARLS_TCL_DIR   $::env(BSG_PEARLS_TCL_DIR)
+set BSG_DESIGN_TCL_DIR   $::env(BSG_DESIGN_TCL_DIR)
+set BSG_LOG_LEVEL        $::env(BSG_LOG_LEVEL)
+source ${BSG_PEARLS_TCL_DIR}/bsg_utils.tcl
+source ${BSG_PEARLS_TCL_DIR}/yosys_utils.tcl
 
 #####################################################
 ## dc

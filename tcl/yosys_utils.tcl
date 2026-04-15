@@ -20,7 +20,7 @@ proc bsg_yosys_setup_init { log_level } {
 }
 
 proc bsg_yosys_rename_module { curr_name new_name } {
-    bsg_pr_info "Renaming module ${curr_name} -> ${new_name}"
+    bsg_pr_debug "Renaming module ${curr_name} -> ${new_name}"
     yosys rename ${curr_name} ${new_name}
     yosys chtype -map ${curr_name} ${new_name}
 }
@@ -44,70 +44,97 @@ proc bsg_yosys_save_step { design step } {
         bsg_yosys_rename_module ${module} ${new_name}
     }
 
-    bsg_pr_info "Renaming top to ${new_top}"
-    yosys rename -top ${new_top}
-
     set new_file ${design}.${step}.v
     yosys write_verilog -nostr -noattr -noexpr -nohex -nodec ${new_file}
 }
 
 proc bsg_yosys_read_design_slang { design vsources vdefines vincludes vparams } {
-    set slang_cmd "yosys read_slang"
+    set slang_cmd [list "read_slang"]
     foreach def ${vdefines} {
-        append slang_cmd " -D${def}"
+        lappend slang_cmd "-D${def}"
     }
     foreach inc ${vincludes} {
-        append slang_cmd " -I${inc}"
+        lappend slang_cmd "-I${inc}"
     }
     foreach param ${vparams} {
-        append slang_cmd " -G ${param}"
+        lappend slang_cmd "-G${param}"
     }
 
     bsg_pr_info "Ingesting the design with slang"
-    append slang_cmd " --top ${design}"
-    append slang_cmd " --ignore-initial"
-    append slang_cmd " --ignore-timing"
-    append slang_cmd " --ignore-unknown-modules"
-    append slang_cmd " --best-effort-hierarchy"
+    lappend slang_cmd "--top" "${design}"
+    lappend slang_cmd "--ignore-unknown-modules"
+    lappend slang_cmd "--best-effort-hierarchy"
+
+    lappend slang_cmd {*}${vsources}
     bsg_pr_debug "Slang cmd:\n\t${slang_cmd}"
-    eval ${slang_cmd} {{*}${vsources}}
+    yosys {*}${slang_cmd}
 }
 
-# Leaving for posterity, but not used at the moment
 proc bsg_yosys_unwrap_design { wrapper design } {
-    bsg_pr_info "Unwrapping ${wrapper}"
-    yosys select N:${wrapper}/* t:*${design}* %i %M
-    yosys tee -q -o $::G_TEMP_FILE select -list %
-    yosys select -clear
-    set curr_top [exec -- head -n 1 $::G_TEMP_FILE]
-    bsg_yosys_rename_module ${curr_top} ${design}
-
-    bsg_pr_info "Generating wrapper verilog"
-    yosys select ${wrapper}
-    yosys write_verilog -selected -nostr -noattr -noexpr -nohex -nodec ${wrapper}.wrapper.v
-    set sed_command "s|${design}|`BSG_CHIP_DUT_NAME|g"
-    exec -- sed -i ${sed_command} ${design}.wrapper.v
-    yosys select -clear
-
-    yosys delete ${wrapper}
-    bsg_pr_info "Deleting ${wrapper}"
-
-    return ${design}
-}
-
-# Leaving for posterity, but not used at the moment
-proc bsg_yosys_strip_modules { wrapper design } {
     bsg_pr_info "Stripping module names"
     yosys tee -q -o $::G_TEMP_FILE select N:* N:${wrapper} %d -list-mod
-    set module_list [split [read [open $::G_TEMP_FILE r]] "\n"]
-    set sed_command "s|\$${design}\\.\[^\\.\]*\\.|.|"
-    exec -- sed -i ${sed_command} $::G_TEMP_FILE
-    set stripped_lines [open $::G_TEMP_FILE r]
-    foreach module ${module_list} {
-        if {${module} == ""} continue;
-        gets ${stripped_lines} stripped_name
-        puts "Stripping auto-generated name ${module} -> ${stripped_name}"
-        bsg_yosys_rename_module ${module} ${stripped_name}
+
+    set i 0
+    foreach mod [split [read [open $::G_TEMP_FILE r]] "\n"] {
+        incr i
+        set mod [string trim $mod]
+        if {[string match "*\$*" $mod]} {
+            set tag ""
+            set prefix [lindex [split $mod "\$"] 0]
+            set suffix [lindex [split $mod "\$"] 1]
+            if {[string match $design $prefix]} {
+                set clean_name $prefix
+            } else {
+                foreach l [split $suffix "."] {
+                    append tag [string index $l 0]
+                }
+                set clean_name ${prefix}__${tag}${i}
+            }
+            bsg_pr_debug "mangled: $mod -> clean: $clean_name"
+            bsg_yosys_rename_module ${mod} ${clean_name}
+        }
     }
+    yosys hierarchy -check -top $design
+}
+
+# yosys is currently just passing cell names around
+proc _bsg_get_name_impl { cells } {
+    return $cells
+}
+
+proc _bsg_get_cells_impl { regex } {
+    set regex [string map {".*" "*"} $regex]
+    yosys tee -q -o $::G_TEMP_FILE select -list "c:${regex}"
+    set cells [read [open $::G_TEMP_FILE r]]
+    bsg_pr_info "_bsg_get_cells_impl $cells"
+    return $cells
+}
+
+proc sizeof_collection { coll } {
+    return [llength $coll]
+}
+
+proc _bsg_dont_touch_cells_impl { cells } {
+    bsg_pr_warn "_bsg_dont_touch_cells_impl not implemented, called on:\n\t$cells"
+}
+
+proc _bsg_dont_gate_cells_impl { cells } {
+    bsg_pr_warn "_bsg_dont_gate_cells_impl not implemented, called on:\n\t$cells"
+}
+
+proc _bsg_set_ungroup_cells_impl { cells } {
+    bsg_pr_warn "_bsg_set_ungroup_cells_impl not implemented, called on:\n\t$cells"
+}
+
+proc _bsg_set_size_only_impl { cells } {
+    bsg_pr_warn "_bsg_set_size_only_impl not implemented, called on:\n\t$cells"
+}
+
+proc _bsg_set_disable_timing_impl { cells } {
+    bsg_pr_warn "_bsg_set_disable_timing_impl not implemented, called on:\n\t$cells"
+}
+
+proc _bsg_set_synchronizer_impl { cells } {
+    bsg_pr_warn "_bsg_set_synchronizer_impl not implemented, called on:\n\t$cells"
 }
 

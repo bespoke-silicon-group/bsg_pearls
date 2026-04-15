@@ -3,11 +3,11 @@
 #####################################################
 
 # Must set these environment variables, everything else is optional (hopefully)
-set BSG_CHIP_TCL_DIR   $::env(BSG_CHIP_TCL_DIR)
-set BSG_DESIGN_TCL_DIR $::env(BSG_DESIGN_TCL_DIR)
-set BSG_LOG_LEVEL      $::env(BSG_LOG_LEVEL)
-source ${BSG_CHIP_TCL_DIR}/bsg_utils.tcl
-source ${BSG_CHIP_TCL_DIR}/genus_utils.tcl
+set BSG_PEARLS_TCL_DIR   $::env(BSG_PEARLS_TCL_DIR)
+set BSG_DESIGN_TCL_DIR   $::env(BSG_DESIGN_TCL_DIR)
+set BSG_LOG_LEVEL        $::env(BSG_LOG_LEVEL)
+source ${BSG_PEARLS_TCL_DIR}/bsg_utils.tcl
+source ${BSG_PEARLS_TCL_DIR}/genus_utils.tcl
 
 #####################################################
 ## dc
@@ -59,9 +59,11 @@ set HARD_VSOURCES [bsg_get_env HARD_VSOURCES]
 set HARD_NSOURCES [bsg_get_env HARD_NSOURCES]
 
 set DESIGN [bsg_get_env DESIGN]
+set WRAPPER [bsg_get_env WRAPPER]
 set GPARAMS [bsg_get_env GPARAMS]
 
 set design ${DESIGN}
+set wrapper ${WRAPPER}
 bsg_design_init ${design}
 
 #######################################################
@@ -130,44 +132,49 @@ if {[llength [info procs design_extract_vparams]]} {
 }
 
 bsg_pr_info "Elaborating ${design}"
-elaborate ${design} -parameters ${final_vparams}
+if {${final_vparams} != ""} {
+    elaborate ${wrapper} -parameters ${final_vparams}
+} else {
+    elaborate ${wrapper}
+}
 
 bsg_pr_info "Setting BSG attributes"
 foreach rp ${rp_netlists} {
     set_dont_touch [get_designs "${rp}"]
 }
 
-bsg_dont_touch_cells_regex   ".*BSG_DONT_TOUCH"
-bsg_dont_gate_cells_regex    ".*BSG_NO_CLOCK_GATE"
-bsg_set_ungroup_cells_regex  ".*BSG_UNGROUP"
-bsg_set_disable_timing_regex ".*BSG_TIMING_DISABLE"
-bsg_set_size_only_regex      ".*BSG_RESIZE_OK"
+# TODO: Implement each of these in genus and yosys
+bsg_dont_touch_cells_regex   ".*BSG_DONT_TOUCH.*"
+bsg_dont_gate_cells_regex    ".*BSG_NO_CLOCK_GATE.*"
+bsg_set_ungroup_cells_regex  ".*BSG_UNGROUP.*"
+bsg_set_disable_timing_regex ".*BSG_TIMING_DISABLE.*"
+bsg_set_size_only_regex      ".*BSG_RESIZE_OK.*"
 
 if {[llength [info procs bsg_design_constrain]]} {
 	bsg_design_constrain ${design}
 }
 bsg_set_synchronizer_regex ".*BSG_SYNC1.*"
  
-check_timing > ${design}.check_timing.rpt
+#check_timing > ${design}.check_timing.rpt
 
-error
+#error
 
-bsg_pr_info "Sourcing constraints"
-bsg_source_if_exists ${BSG_DESIGN_CONSTRAINTS_SCRIPT}
+#bsg_pr_info "Sourcing constraints"
+#bsg_source_if_exists ${BSG_DESIGN_CONSTRAINTS_SCRIPT}
 
-bsg_pr_info "Unwrapping design"
-bsg_constraints_bleach
-bsg_genus_save_step ${wrapper} ${design}
+#bsg_pr_info "Unwrapping design"
+#bsg_constraints_bleach
+#bsg_genus_save_step ${wrapper} ${design}
 
-bsg_pr_info "Using toplevel constraints for design ${design}"
-set inst {}
-set root {}
-bsg_design_constrain ${root} ${inst}
-check_timing > ${design}.check_timing.rpt
+#bsg_pr_info "Using toplevel constraints for design ${design}"
+#set inst {}
+#set root {}
+#bsg_design_constrain ${root} ${inst}
+#check_timing > ${design}.check_timing.rpt
 
 ### write elab design
-bsg_source_if_exists ${BSG_DESIGN_POSTELAB_SCRIPT}
-bsg_genus_save_step ${design} ${step}
+#bsg_source_if_exists ${BSG_DESIGN_POSTELAB_SCRIPT}
+#bsg_genus_save_step ${design} ${step}
 
 
 ####

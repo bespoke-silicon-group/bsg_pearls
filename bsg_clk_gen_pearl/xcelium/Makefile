@@ -22,7 +22,7 @@ $(eval $(call bsg_fn_xcelium_build,vlog))
 $(eval $(call bsg_fn_xcelium_build,hard))
 
 $(eval $(call bsg_fn_xcelium_sim,vlog,testA,tag_boot,test1))
-#$(eval $(call bsg_fn_xcelium_sim,hard,testA,tag_boot,test1))
+$(eval $(call bsg_fn_xcelium_sim,hard,testA,tag_boot,test1))
 
 $(eval $(call bsg_fn_xcelium_coverage,vlog))
 

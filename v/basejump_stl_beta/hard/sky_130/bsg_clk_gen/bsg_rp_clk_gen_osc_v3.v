@@ -13,10 +13,6 @@ module bsg_rp_clk_gen_osc_v3
    , output clk_o
    );
 
-   initial begin
-	   $finish;
-   end
-
   wire lobit, hibit;
   sky130_fd_sc_hd__conb_1 T0 (.HI(hibit), .LO(lobit));
   wire async_reset_neg;

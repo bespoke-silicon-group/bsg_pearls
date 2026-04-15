@@ -34,5 +34,3 @@ TEST_VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.sv
 TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip_harness.sv
 TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip_gateway.sv
 
-TEST_VSOURCES += $(BSG_DESIGN_TEST_SRC_DIR)/bsg_chip.sv
-

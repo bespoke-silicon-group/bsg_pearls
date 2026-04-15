@@ -13,13 +13,15 @@ include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
 define bsg_fn_xcelium_build
 
 $(1)_XRUN_OPTS := $$(XRUN_OPTS)
+$(1)_XRUN_OPTS += -timescale 1ns/1ps
 $(1)_XRUN_OPTS += -licinfo
-$(1)_XRUN_OPTS += -libverbose -configverbose
+#$(1)_XRUN_OPTS += -libverbose -configverbose
 $(1)_XRUN_OPTS += -elaborate
 $(1)_XRUN_OPTS += -nowarn SPDUSD
 $(1)_XRUN_OPTS += -nowarn NOTDEF
 $(1)_XRUN_OPTS += -nowarn UEXPSC
 $(1)_XRUN_OPTS += -nowarn VCFGUC
+$(1)_XRUN_OPTS += -nowarn COVDNC
 
 ifeq ($(TRACE),1)
 $(1)_XRUN_OPTS += -access +rwc
@@ -40,19 +42,21 @@ $(1)_XRUN_OPTS += -nowarn COVMDD
 endif
 
 $(1)_BUILD_LOG := $(abspath $(1)/build.log)
-$(1)/simx: | $(BUILD_SOURCES)
+$(1)/simx: | $$(BUILD_SOURCES)
 	@$(SED) -i '/^-work/d' */*/flist.txt
 	@$(SED) -i "s/^+incdir+/-incdir /g" */*/flist.txt
 	@$(SED) -i "s/^+define+/-define /g" */*/flist.txt
 	@$(CD) work; \
-		$(XRUN) $$($(1)_XRUN_OPTS) -makelib vpkglib -f vpkg/flist.txt -endlib \
-			-reflib vpkglib -makelib vloglib -f vlog/flist.txt -endlib \
-			-reflib vpkglib -makelib testlib -f test/flist.txt -endlib \
-			-reflib vpkglib -makelib hardlib -f hard/flist.txt -endlib \
-			-vcfg_no_default_bind -compcnfg $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config.v \
+		$(XRUN) $$($(1)_XRUN_OPTS) \
+							-makelib vpdklib -f vpdk/flist.txt -endlib \
+							-makelib vpkglib -f vpkg/flist.txt -endlib \
+			-reflib vpkglib 		-makelib vloglib -f vlog/flist.txt -endlib \
+			-reflib vpkglib 		-makelib testlib -f test/flist.txt -endlib \
+			-reflib vpkglib -reflib vpdklib -makelib hardlib -f hard/flist.txt -endlib \
+			-vcfg_no_default_bind -compcnfg $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config-$(1).v \
 			-top config_$(1) \
 			-l $$($(1)_BUILD_LOG)
-	@$(SYMLINK) $$(abspath work/xcelium.d) vlog/xcelium.d
+	@$(SYMLINK) $$(abspath work/xcelium.d) $(1)/xcelium.d
 	@$(TOUCH) $$@
 
 build-$(1): $(1)/simx
