@@ -1,0 +1,151 @@
+# Set up the design
+include $(BSG_DESIGN_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
+
+# $(1) -> corner
+define bsg_fn_vcs_build
+
+$(1)_VCS_OPTS := $$(VCS_OPTS)
+$(1)_VCS_OPTS += -full64
+$(1)_VCS_OPTS += -timescale=1ns/1ps
+$(1)_VCS_OPTS += -sverilog
+#$(1)_VCS_OPTS += -diag libconfig -libmap_verbose
+
+$(1)_VLOGAN_OPTS := $$(VLOGAN_OPTS)
+$(1)_VLOGAN_OPTS += -full64
+$(1)_VLOGAN_OPTS += -sverilog
+$(1)_VLOGAN_OPTS += -timescale=1ns/1ps
+
+ifeq ($(ASSERT),1)
+$(1)_VCS_OPTS += +define+BSG_NONSYNTH_ASSERT_ENABLE
+$(1)_VCS_OPTS += -assert svaext
+endif
+
+ifeq ($(COVERAGE),1)
+$(1)_VCS_OPTS += -cm line+tgl
+$(1)_VCS_OPTS += -cm_dir ../$(1)/design.vdb
+$(1)_VCS_OPTS += -cm_hier $(BSG_PEARLS_TEST_SRC_DIR)/cm_hier.txt
+endif
+
+ifeq ($(TRACE),1)
+$(1)_VCS_OPTS += -debug_access+r
+$(1)_VLOGAN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_ENABLE
+$(1)_VLOGAN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_DEPTH=0
+$(1)_VLOGAN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_HIER=testbench.harness.dut.chip
+ifeq ($(ENABLE_VERDI),1)
+$(1)_VLOGAN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_FSDB
+else
+$(1)_VLOGAN_OPTS += +define+BSG_NONSYNTH_WAVEFORM_TRACER_VPD
+endif
+endif
+
+BUILD_SOURCES += work/synopsys_sim.setup
+%/synopsys_sim.setup:
+	@$(MKDIR) -p $$(@D)
+	@$(ECHO) "WORK > DEFAULT"   >> $$@
+	@$(ECHO) "DEFAULT : ./work" >> $$@
+	@$(ECHO) "vpkglib : ./vpkg" >> $$@
+	@$(ECHO) "vpdklib : ./vpdk" >> $$@
+	@$(ECHO) "vloglib : ./vlog" >> $$@
+	@$(ECHO) "testlib : ./test" >> $$@
+	@$(ECHO) "hardlib : ./hard" >> $$@
+
+$(1)_BUILD_LOG := $(abspath $(1)/build.log)
+$(1)/simv: | $$(BUILD_SOURCES)
+	@$(MKDIR) -p $(1)
+	@$(SED) -i '/^-work/d' */*/flist.txt
+	@$(CD) work; \
+		$(VLOGAN) $$($(1)_VLOGAN_OPTS) -work vpdklib -f vpdk/flist.txt; \
+		$(VLOGAN) $$($(1)_VLOGAN_OPTS) -work vpkglib -f vpkg/flist.txt; \
+		$(VLOGAN) $$($(1)_VLOGAN_OPTS) -work vloglib -f vlog/flist.txt; \
+		$(VLOGAN) $$($(1)_VLOGAN_OPTS) -work testlib -f test/flist.txt; \
+		$(VLOGAN) $$($(1)_VLOGAN_OPTS) -work hardlib -f hard/flist.txt; \
+		$(VLOGAN) $$($(1)_VLOGAN_OPTS) $(BSG_DESIGN_TEST_SRC_DIR)/bsg_config-*.v;
+	@$(CD) work; \
+		$(VCS) $$($(1)_VCS_OPTS) -top config_$(1) -o ../$$@ -l $$($(1)_BUILD_LOG)
+
+build-$(1): $(1)/simv
+
+clean::
+	@$(RMRF) $(1)
+
+endef
+
+# $(1) -> corner
+# $(2) -> name
+# $(3) -> tag trace
+# $(4) -> test trace
+define bsg_fn_vcs_sim
+
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(3)))
+$(eval $(call bsg_fn_trace_gen,$(1)/$(2),$(4)))
+
+$(1)$(2)_SIMV_OPTS := $(SIMV_OPTS)
+$(1)$(2)_SIMV_OPTS += +vcs+lic+wait
+$(1)$(2)_SIMV_OPTS += +vcs+loopdetect +vcs+loopreport
+$(1)$(2)_SIMV_OPTS += +v2k
+$(1)$(2)_SIMV_OPTS += -no_save -suppress=ASLR_DETECTED_INFO
+
+ifeq ($(COVERAGE),1)
+$(1)$(2)_SIMV_OPTS += -cm line+tgl
+$(1)$(2)_SIMV_OPTS += -cm_dir $(2).vdb
+$(1)$(2)_SIMV_OPTS += -cm_hier $(BSG_PEARLS_TEST_SRC_DIR)/cm_hier.txt
+endif
+
+ifeq ($(ENABLE_VERDI),1)
+$(1)$(2)_DUMPFILE := dump.fsdb
+$(1)$(2)_VIEWCMD := $(VERDI) -ssf
+else
+$(1)$(2)_DUMPFILE := dump.vpd
+$(1)$(2)_VIEWCMD := $(DVE) -full64 -vpd
+endif
+
+$(1)$(2)_PLUSARGS := $(PLUSARGS)
+$(1)$(2)_PLUSARGS += +TAG_TRACE=$(3).tr
+$(1)$(2)_PLUSARGS += +TEST_TRACE=$(4).tr
+ifeq ($(TRACE),1)
+$(1)$(2)_PLUSARGS += +bsg_trace=$$($(1)$(2)_DUMPFILE)
+endif
+
+$(1)_SIMV_LOG := $(abspath $(1)/$(2)/run.log)
+
+$(1)/$(2)/run: $(1)/simv $(1)/$(2)/$(3).tr $(1)/$(2)/$(4).tr
+	@$(MKDIR) -p $$(@D)
+	@$(CD) $$(@D); \
+		../$$(<F) $$($(1)$(2)_SIMV_OPTS) $$($(1)$(2)_PLUSARGS) |& $(TEE) $$($(1)_SIMV_LOG)
+	@$(TOUCH) $$@
+run-$(1)-$(2): $(1)/$(2)/run
+
+$(1)/$(2)/view: $(1)/$(2)/$$($(1)$(2)_DUMPFILE)
+	@$(CD) $$(@D); \
+		$$($(1)$(2)_VIEWCMD) $$(<F) &
+view-$(1)-$(2): $(1)/$(2)/view
+
+endef
+
+# $(1): corner (only vlog)
+define bsg_fn_vcs_coverage
+
+$(1)_URG_OPTS :=
+$(1)_URG_OPTS += -full64
+$(1)_URG_OPTS += -report ../$(1)/coverage
+
+ALL_COVDBS := $(1)/design.vdb $(wildcard $(1)/*/*.vdb)
+$(1)/coverage: ## merges VCS coverage
+	@$(MKDIR) -p work/coverage
+	@$(CD) work; \
+		$(URG) $$($(1)_URG_OPTS) $$(addprefix -dir ../,$$(ALL_COVDBS))
+	@$(ECHO) "Coverage report generated in $(1)/coverage"
+	@$(ECHO) "View with web browser such as Firefox"
+
+coverage-$(1): $(1)/coverage
+
+endef
+
