@@ -10,27 +10,26 @@ include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
 include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
 
 # $(1) -> synthesis tag
-define bsg_fn_yosys_synth
+define bsg_fn_dc_synth
 
-$(1)_YOSYS_OPTS := $(YOSYS_OPTS)
-$(1)_YOSYS_OPTS += -m slang
-#$(1)_YOSYS_OPTS += -m design_introspection
-#$(1)_YOSYS_OPTS += -m params
-$(1)_YOSYS_OPTS += -m sdc
-$(1)_YOSYS_OPTS += -p "$$(foreach s,$$($(1)_SCRIPTS),tcl $$(subst $(1)/,,$$(s));)"
-
-ifdef $(1)_SHELL
-$(1)_YOSYS_OPTS += -C
-endif
+$(1)_DC_OPTS := $(DC_OPTS)
+$(1)_DC_OPTS += -64bit
 
 $(1)_SYNTH_LOG := $(abspath $(1)/synth.log)
+
+$(1)_DC_OPTS += -x "$$(foreach s,$$($(1)_SCRIPTS),source -verbose -echo $$(subst $(1)/,,$$(s));)
+ifndef $(1)_SHELL
+$(1)_DC_OPTS += exit;
+endif
+$(1)_DC_OPTS += "
+
 BUILD_SOURCES += $$($(1)_SCRIPTS)
 
 $(1)/synth: | $$(BUILD_SOURCES)
 	@$(MKDIR) -p $$(@D)
 	@$(ECHO) "set ::env(BSG_LOG_LEVEL) $$($(1)_LOG_LEVEL)" >> $(1)/bsg_design_setup.tcl
-	@$(CD) $$(@D); \
-		$(YOSYS) $$($(1)_YOSYS_OPTS) -l $$($(1)_SYNTH_LOG)
+	$(CD) $$(@D); \
+		$(DC_SHELL) $$($(1)_DC_OPTS) -output_log_file $$($(1)_SYNTH_LOG)
 synth-$(1): $(1)/synth
 
 clean::
@@ -42,14 +41,14 @@ basic_SCRIPTS   :=
 basic_SCRIPTS   += basic/bsg_pearls_setup.tcl
 basic_SCRIPTS   += basic/bsg_design_setup.tcl
 basic_SCRIPTS   += basic/bsg_chip_pkg.tcl
-basic_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.yosys.tcl
+basic_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.dc.tcl
 basic_LOG_LEVEL := 2
 
 debug_SCRIPTS   :=
 debug_SCRIPTS   += debug/bsg_pearls_setup.tcl
 debug_SCRIPTS   += debug/bsg_design_setup.tcl
 debug_SCRIPTS   += debug/bsg_chip_pkg.tcl
-debug_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.yosys.tcl
+debug_SCRIPTS   += $(BSG_PEARLS_TCL_DIR)/synthesis.dc.tcl
 debug_LOG_LEVEL := 99
 debug_SHELL     := 1
 
@@ -59,5 +58,4 @@ iterate_SCRIPTS   += iterate/bsg_design_setup.tcl
 iterate_SCRIPTS   += iterate/bsg_chip_pkg.tcl
 iterate_SHELL     := 1
 iterate_LOG_LEVEL := 1
-
 

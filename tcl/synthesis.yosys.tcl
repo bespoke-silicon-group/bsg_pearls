@@ -22,7 +22,7 @@ bsg_pr_info "Setting up design environment"
 set BSG_DESIGN_SETUP_SCRIPT [bsg_get_env BSG_DESIGN_SETUP_SCRIPT design_setup.tcl]
 
 bsg_pr_info "Reading hooks"
-set BSG_DESIGN_PARAMETERS_SCRIPT [bsg_get_env BSG_DESIGN_PARAMETERS_SCRIPT ${BSG_DESIGN_TCL_DIR}/parameters.tcl]
+set BSG_DESIGN_CONSTRAINTS_SCRIPT [bsg_get_env BSG_DESIGN_CONSTRAINTS_SCRIPT ${BSG_DESIGN_TCL_DIR}/constraints.tcl]
 set BSG_DESIGN_PRELIBRARY_SCRIPT [bsg_get_env BSG_DESIGN_PRELIBRARY_SCRIPT ${BSG_DESIGN_TCL_DIR}/pre_library.tcl]
 set BSG_DESIGN_PREELAB_SCRIPT [bsg_get_env BSG_DESIGN_PREELAB_SCRIPT ${BSG_DESIGN_TCL_DIR}/pre_elab.tcl]
 set BSG_DESIGN_PREGEN_SCRIPT [bsg_get_env BSG_DESIGN_PREGEN_SCRIPT ${BSG_DESIGN_TCL_DIR}/pre_gen.tcl]
@@ -58,7 +58,6 @@ set HARD_NSOURCES [bsg_get_env HARD_NSOURCES]
 
 set DESIGN [bsg_get_env DESIGN]
 set WRAPPER [bsg_get_env WRAPPER]
-set GPARAMS [bsg_get_env GPARAMS]
 
 set design ${DESIGN}
 set wrapper ${WRAPPER}
@@ -92,6 +91,7 @@ yosys read_liberty -lib -ignore_miss_dir ${all_libs}
 
 # We handle yosys netlists a little differently, with whitebox attribute
 set final_nsources ${HARD_NSOURCES}
+
 foreach n ${final_nsources} {
     set n_tail [file tail $n]
     bsg_pr_info "Adding hardened netlist as whitebox: ${n_tail}"
@@ -106,46 +106,40 @@ bsg_source_if_exists ${BSG_DESIGN_POSTLIBRARY_SCRIPT}
 set step elab
 bsg_pr_info "Running step: ${step}"
 bsg_source_if_exists ${BSG_DESIGN_PREELAB_SCRIPT}
+bsg_source_if_exists ${BSG_DESIGN_CONSTRAINTS_SCRIPT}
 
 set final_design [string trim ${DESIGN}]
 set final_wrapper [string trim ${WRAPPER}]
 set final_vsources [bsg_source_swap ${VPKG} ${VSOURCES} ${HARD_VSOURCES} {}]
 set final_vincludes ${VINCLUDES}
 set final_vdefines [concat ${VDEFINES} BSG_NO_TIMESCALE SYNTHESIS]
-set final_vparams {}
-bsg_source_if_exists ${BSG_DESIGN_PARAMETERS_SCRIPT}
-if {[llength [info procs design_extract_vparams]]} {
-    append final_vparams [design_extract_vparams ${GPARAMS}]
-}
 
 bsg_yosys_read_design_slang \
     ${final_wrapper} \
     ${final_vsources} \
     ${final_vdefines} \
-    ${final_vincludes} \
-    ${final_vparams}
+    ${final_vincludes}
 
 # elaborate design hierarchy
 yosys hierarchy -check -top ${final_wrapper}
 
-# set design as toplevel
-bsg_yosys_unwrap_design ${final_wrapper} ${final_design}
-
-# TODO: Implement each of these in genus and yosys
-bsg_pr_info "ABCD"
-bsg_dont_touch_cells_regex   "*BSG_DONT_TOUCH*"
-bsg_dont_gate_cells_regex    "*BSG_NO_CLOCK_GATE*"
-bsg_set_ungroup_cells_regex  "*BSG_UNGROUP*"
-bsg_set_disable_timing_regex "*BSG_TIMING_DISABLE*"
-bsg_set_size_only_regex      "*BSG_RESIZE_OK*"
+bsg_pr_info "Handling BSG pragmas"
+bsg_dont_touch_cells_regex   ".*BSG_DONT_TOUCH.*"
+bsg_dont_gate_cells_regex    ".*BSG_NO_CLOCK_GATE.*"
+bsg_set_ungroup_cells_regex  ".*BSG_UNGROUP.*"
+bsg_set_disable_timing_regex ".*BSG_TIMING_DISABLE.*"
+bsg_set_size_only_regex      ".*BSG_RESIZE_OK.*"
+bsg_set_synchronizer_regex   ".*BSG_SYNC.*"
 
 # yosys is not constraint driven currently
-if {[llength [info procs bsg_design_constrain]]} {
-	bsg_design_constrain ${design}
-}
+#if {[llength [info procs bsg_design_constrain]]} {
+#	bsg_design_constrain ${design}
+#}
 
-parray ::G_BSG_INFO
-exit
+#bsg_constrain_synchronizer_regex ".*BSG_SYNC1"
+
+# set design as toplevel
+bsg_yosys_unwrap_design ${final_wrapper} ${final_design}
 
 # write elab design
 bsg_source_if_exists ${BSG_DESIGN_POSTELAB_SCRIPT}

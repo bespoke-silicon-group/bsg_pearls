@@ -27,7 +27,7 @@ module bsg_rp_clk_gen_osc_v3_row
   wire fb;
   sky130_fd_sc_hd__nand2_1 N1 (.Y(fb), .A(clkfb_i), .B(hibit));
   wire clk;
-  sky130_fd_sc_hd__nand2_1 N2_BSG_TIMING_DISABLE (.Y(clk), .A(fb), .B(ctl_en));
+  sky130_fd_sc_hd__nand2_1 N2 (.Y(clk), .A(fb), .B(ctl_en));
 
 `ifdef SYNTHESIS
   assign clk_o = clk;

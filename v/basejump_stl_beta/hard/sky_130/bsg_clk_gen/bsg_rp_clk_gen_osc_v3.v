@@ -50,7 +50,7 @@ module bsg_rp_clk_gen_osc_v3
 
 
   wire fb_pre;
-  sky130_fd_sc_hd__clkbuf_4 B8 (.X(fb_pre), .A(n[8]));
+  sky130_fd_sc_hd__clkbuf_4 B8_BSG_TIMING_DISABLE (.X(fb_pre), .A(n[8]));
   wire fb_dly;
 `ifdef SYNTHESIS
   assign fb_dly = fb_pre;
@@ -59,7 +59,7 @@ module bsg_rp_clk_gen_osc_v3
 `endif
   sky130_fd_sc_hd__clkinv_4 I2 (.Y(clk_o), .A(fb_dly));
   wire fb_gate;
-  sky130_fd_sc_hd__clkinv_4 I3_BSG_TIMING_DISABLE (.Y(fb_gate), .A(fb_dly));
+  sky130_fd_sc_hd__clkinv_4 I3 (.Y(fb_gate), .A(fb_dly));
   wire gate_en_sync_1_r, gate_en_sync_2_r;
   sky130_fd_sc_hd__dfrtp_1 D0_BSG_SYNC1 (.RESET_B(async_reset_neg), .D(trigger_i), .CLK(fb_gate), .Q(gate_en_sync_1_r));
   sky130_fd_sc_hd__dfrtp_1 D1_BSG_SYNC2 (.RESET_B(async_reset_neg), .D(gate_en_sync_1_r), .CLK(fb_gate), .Q(gate_en_sync_2_r));

@@ -39,7 +39,7 @@ for i in range(0, num_dly_p):
 """)
 print(f"""
   wire fb_pre;
-  sky130_fd_sc_hd__clkbuf_4 B{num_dly_p} (.X(fb_pre), .A(n[{num_dly_p}]));
+  sky130_fd_sc_hd__clkbuf_4 B{num_dly_p}_BSG_TIMING_DISABLE (.X(fb_pre), .A(n[{num_dly_p}]));
   wire fb_dly;
 `ifdef SYNTHESIS
   assign fb_dly = fb_pre;
@@ -48,7 +48,7 @@ print(f"""
 `endif
   sky130_fd_sc_hd__clkinv_4 I2 (.Y(clk_o), .A(fb_dly));
   wire fb_gate;
-  sky130_fd_sc_hd__clkinv_4 I3_BSG_TIMING_DISABLE (.Y(fb_gate), .A(fb_dly));
+  sky130_fd_sc_hd__clkinv_4 I3 (.Y(fb_gate), .A(fb_dly));
   wire gate_en_sync_1_r, gate_en_sync_2_r;
   sky130_fd_sc_hd__dfrtp_1 D0_BSG_SYNC1 (.RESET_B(async_reset_neg), .D(trigger_i), .CLK(fb_gate), .Q(gate_en_sync_1_r));
   sky130_fd_sc_hd__dfrtp_1 D1_BSG_SYNC2 (.RESET_B(async_reset_neg), .D(gate_en_sync_1_r), .CLK(fb_gate), .Q(gate_en_sync_2_r));

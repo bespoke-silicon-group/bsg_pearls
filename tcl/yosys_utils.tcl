@@ -48,7 +48,7 @@ proc bsg_yosys_save_step { design step } {
     yosys write_verilog -nostr -noattr -noexpr -nohex -nodec ${new_file}
 }
 
-proc bsg_yosys_read_design_slang { design vsources vdefines vincludes vparams } {
+proc bsg_yosys_read_design_slang { design vsources vdefines vincludes {vparams {}}} {
     set slang_cmd [list "read_slang"]
     foreach def ${vdefines} {
         lappend slang_cmd "-D${def}"
@@ -106,7 +106,6 @@ proc _bsg_get_cells_impl { regex } {
     set regex [string map {".*" "*"} $regex]
     yosys tee -q -o $::G_TEMP_FILE select -list "c:${regex}"
     set cells [read [open $::G_TEMP_FILE r]]
-    bsg_pr_info "_bsg_get_cells_impl $cells"
     return $cells
 }
 
@@ -136,5 +135,9 @@ proc _bsg_set_disable_timing_impl { cells } {
 
 proc _bsg_set_synchronizer_impl { cells } {
     bsg_pr_warn "_bsg_set_synchronizer_impl not implemented, called on:\n\t$cells"
+}
+
+proc _bsg_constrain_synchronizer_impl { cells } {
+    bsg_pr_warn "_bsg_constrain_synchronizer_impl not implemented, called on:\n\t$cells"
 }
 

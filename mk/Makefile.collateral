@@ -31,8 +31,12 @@ VPKG += work/bsg_chip_pkg.sv
 	@$(ECHO) "set ::env(PDK) $(PDK)"                                               >> $$@
 	@$(ECHO) "set ::env(PDK_LIB) $(PDK_LIB)"                                       >> $$@
 	@$(ECHO) "set ::env(PDK_CORNER) $(PDK_CORNER)"                                 >> $$@
+	@$(ECHO) "set ::env(PDK_DRIVER_MIN) $(PDK_DRIVER_MIN)"                         >> $$@
+	@$(ECHO) "set ::env(PDK_DRIVER_MAX) $(PDK_DRIVER_MAX)"                         >> $$@
+	@$(ECHO) "set ::env(PDK_LOAD_MIN) $(PDK_LOAD_MIN)"                             >> $$@
+	@$(ECHO) "set ::env(PDK_LOAD_MAX) $(PDK_LOAD_MAX)"                             >> $$@
 	@$(ECHO) "set ::env(BSG_PEARLS_DIR) $(BSG_PEARLS_DIR)"                         >> $$@
-	@$(ECHO) "set ::env(BSG_PEARLS_TCL_DIR) $(BSG_PEARLS_TCL_DIR)"                   >> $$@
+	@$(ECHO) "set ::env(BSG_PEARLS_TCL_DIR) $(BSG_PEARLS_TCL_DIR)"                 >> $$@
 	@$(ECHO) "set ::env(BSG_DESIGN_TCL_DIR) $(BSG_DESIGN_TCL_DIR)"                 >> $$@
 	@$(ECHO) "set ::env(BSG_WORK_DIR) $(CURDIR)/work"                              >> $$@
 

@@ -7,7 +7,7 @@ set BSG_PEARLS_TCL_DIR   $::env(BSG_PEARLS_TCL_DIR)
 set BSG_DESIGN_TCL_DIR   $::env(BSG_DESIGN_TCL_DIR)
 set BSG_LOG_LEVEL        $::env(BSG_LOG_LEVEL)
 source ${BSG_PEARLS_TCL_DIR}/bsg_utils.tcl
-source ${BSG_PEARLS_TCL_DIR}/yosys_utils.tcl
+source ${BSG_PEARLS_TCL_DIR}/dc_utils.tcl
 
 #####################################################
 ## dc
@@ -23,7 +23,6 @@ bsg_pr_info "Running step: ${step}"
 set BSG_DESIGN_SETUP_SCRIPT [bsg_get_env BSG_DESIGN_SETUP_SCRIPT design_setup.tcl]
 
 bsg_pr_info "Reading hooks"
-set BSG_DESIGN_PARAMETERS_SCRIPT [bsg_get_env BSG_DESIGN_PARAMETERS_SCRIPT ${BSG_DESIGN_TCL_DIR}/parameters.tcl]
 set BSG_DESIGN_CONSTRAINTS_SCRIPT [bsg_get_env BSG_DESIGN_CONSTRAINTS_SCRIPT ${BSG_DESIGN_TCL_DIR}/constraints.tcl]
 set BSG_DESIGN_PRELIBRARY_SCRIPT [bsg_get_env BSG_DESIGN_PRELIBRARY_SCRIPT ${BSG_DESIGN_TCL_DIR}/pre_library.tcl]
 
@@ -59,9 +58,10 @@ set HARD_VSOURCES [bsg_get_env HARD_VSOURCES]
 set HARD_NSOURCES [bsg_get_env HARD_NSOURCES]
 
 set DESIGN [bsg_get_env DESIGN]
-set GPARAMS [bsg_get_env GPARAMS]
+set WRAPPER [bsg_get_env WRAPPER]
 
 set design ${DESIGN}
+set wrapper ${WRAPPER}
 bsg_design_init ${design}
 
 #######################################################
@@ -99,6 +99,7 @@ bsg_source_if_exists ${BSG_DESIGN_POSTLIBRARY_SCRIPT}
 set step elab
 bsg_pr_info "Running step: ${step}"
 bsg_source_if_exists ${BSG_DESIGN_PREELAB_SCRIPT}
+bsg_source_if_exists ${BSG_DESIGN_CONSTRAINTS_SCRIPT}
 
 set final_vincludes ${VINCLUDES}
 set final_vsources [bsg_source_swap ${VPKG} ${VSOURCES} ${HARD_VSOURCES} ${HARD_NSOURCES}]
@@ -111,33 +112,29 @@ set final_vdefines [concat ${VDEFINES} SYNTHESIS ASIC SYNTHESIS_HARDWARE NO_DUMM
 bsg_pr_info "Analyzing source files for ${design}"
 analyze -define ${final_vdefines} -format sverilog ${final_vsources}
 
-set final_vparams {}
-bsg_source_if_exists ${BSG_DESIGN_PARAMETERS_SCRIPT}
-if {[llength [info procs design_extract_vparams]]} {
-    append final_vparams [regsub -all { } [design_extract_vparams ${GPARAMS}] {,}]
-}
-
 bsg_pr_info "Elaborating"
-elaborate ${design} -parameters ${final_vparams}
+elaborate ${wrapper}
 
-bsg_pr_info "Preserving netlists"
+bsg_pr_info "Setting BSG attributes"
 foreach rp ${rp_designs} {
     set_dont_touch [get_designs "${rp}"]
 }
-
-bsg_pr_info "Sourcing constraints"
-bsg_source_if_exists ${BSG_DESIGN_CONSTRAINTS_SCRIPT}
 
 bsg_dont_touch_cells_regex   ".*BSG_DONT_TOUCH"
 bsg_dont_gate_cells_regex    ".*BSG_NO_CLOCK_GATE"
 bsg_set_ungroup_cells_regex  ".*BSG_UNGROUP"
 bsg_set_disable_timing_regex ".*BSG_TIMING_DISABLE"
 bsg_set_size_only_regex      ".*BSG_RESIZE_OK"
+bsg_set_synchronizer_regex   ".*BSG_SYNC"
 
 if {[llength [info procs bsg_design_constrain]]} {
-    bsg_design_constrain ${design}
+    set hier "chip"; # not generalized, but works for pearls
+    bsg_design_constrain ${hier}
 }
-bsg_set_synchronizer_regex ".*BSG_SYNC1"
+
+bsg_constrain_synchronizer_regex ".*BSG_SYNC1"
+
+bsg_dc_unwrap_design ${wrapper} ${design}
 
 check_timing > ${design}.check_timing.rpt
 

@@ -28,14 +28,14 @@ module bsg_sync_sync_async_reset_unit
 
   logic bsg_SYNC_1_r, bsg_SYNC_2_r;
 
-  sky130_fd_sc_hd__dfrtp_1 hard_sync_int1_BSG_SYNC
+  sky130_fd_sc_hd__dfrtp_1 hard_sync_int1_BSG_SYNC1
    (.CLK(oclk_i)
     ,.RESET_B(~iclk_reset_i)
     ,.D(iclk_data_i)
     ,.Q(bsg_SYNC_1_r)
    );
 
-  sky130_fd_sc_hd__dfrtp_1 hard_sync_int2_BSG_SYNC
+  sky130_fd_sc_hd__dfrtp_1 hard_sync_int2_BSG_SYNC2
    (.CLK(oclk_i)
    ,.RESET_B(~iclk_reset_i)
    ,.D(bsg_SYNC_1_r)

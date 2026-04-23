@@ -53,7 +53,6 @@ proc bsg_dc_convert_libs { libs } {
     return ${all_dbs}
 }
 
-# This proc isn't currently used, but is useful for parameter pushing
 proc bsg_dc_unwrap_design { wrapper design } {
     bsg_pr_info "Unwrapping ${wrapper}"
 
@@ -89,31 +88,73 @@ proc bsg_dc_save_step { design step } {
     write_file -format verilog -hierarchy -output ${new_file}
 }
 
+proc _bsg_get_cells_impl { regex } {
+    set cells [get_cells -quiet -hier -regexp "$regex"]
+    puts "cells found: [get_attribute $cells full_name]"
+    return $cells
+}
+
 proc _bsg_get_name_impl { cells } {
     return [get_attribute ${cells} full_name]
 }
 
 proc _bsg_dont_touch_cells_impl { cells } {
-    bsg_pr_warn "_bsg_dont_touch_cells_impl not implemented, called on:\n\t$cells"
+    set_dont_touch $cells
 }
 
 proc _bsg_dont_gate_cells_impl { cells } {
-    bsg_pr_warn "_bsg_dont_gate_cells_impl not implemented, called on:\n\t$cells"
+    set_clock_gating_objects -exclude ${cells}
 }
 
 proc _bsg_set_ungroup_cells_impl { cells } {
-    bsg_pr_warn "_bsg_set_ungroup_cells_impl not implemented, called on:\n\t$cells"
+	set_ungroup ${cells}
 }
 
 proc _bsg_set_size_only_impl { cells } {
-    bsg_pr_warn "_bsg_set_size_only_impl not implemented, called on:\n\t$cells"
+    foreach_in_collection c ${cells} {
+        if {[get_attribute $c is_hierarchical]} {
+            set leafs [get_cells "[bsg_get_name $c]/*"]
+            _bsg_set_size_only_impl ${leafs}
+        } else {
+            set_size_only -all_instances $c
+        }
+    }
 }
 
 proc _bsg_set_disable_timing_impl { cells } {
-    bsg_pr_warn "_bsg_set_disable_timing_impl not implemented, called on:\n\t$cells"
+    foreach_in_collection c ${cells} {
+        bsg_pr_info "Disabling timing on [bsg_get_name $c]"
+        set_disable_timing $c
+    }
 }
 
 proc _bsg_set_synchronizer_impl { cells } {
-    bsg_pr_warn "_bsg_set_synchronizer_impl not implemented, called on:\n\t$cells"
+    bsg_pr_info "setting dont_touch on synchronizers (still need to constrain)"
+    foreach_in_collection s1 ${cells} {
+        set_dont_touch $s1
+    }
+}
+
+proc _bsg_constrain_synchronizer_impl { cells } {
+    bsg_pr_info "constraining synchronizers"
+    foreach_in_collection s1 ${cells} {
+        set cpins [get_pins -of_objects ${s1} -filter "direction==in&&is_clock_pin==true"]
+        set ipins [get_pins -of_objects ${s1} -filter "direction==in&&is_data_pin==true"]
+        set opins [get_pins -of_objects ${s1} -filter "direction==out"]
+
+        set launch_src [all_fanin -flat -to $ipins]
+        set launch_clk [get_attribute -quiet $launch_src clocks]
+        set latch_clk [get_attribute -quiet $cpins clocks]
+        set launch_period_ns [get_attribute $launch_clk period]
+        set latch_period_ns [get_attribute $latch_clk period]
+		set max_delay_ns [expr min($launch_period_ns, $latch_period_ns) / 2.0]
+		set min_delay_ns 0
+
+        set_max_delay $max_delay_ns -from $launch_clk -to $latch_clk -ignore_clock_latency
+        set_min_delay $min_delay_ns -from $launch_clk -to $latch_clk -ignore_clock_latency
+
+        set_false_path -to   ${ipins} -hold -setup        
+        set_false_path -from ${opins} -hold
+    }
 }
 
