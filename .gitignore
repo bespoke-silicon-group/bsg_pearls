@@ -53,3 +53,6 @@ hard/
 .python-version
 basic/
 debug/
+*/opensta/yosys
+*/opensta/genus
+*/opensta/dc

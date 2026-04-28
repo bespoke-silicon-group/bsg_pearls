@@ -38,7 +38,7 @@ proc bsg_genus_save_step { design step } {
     bsg_pr_info "Renaming top to ${new_top}"
     rename_obj [current_design] ${new_top}
 
-    set new_file ${design}.${step}.v.gz
+    set new_file ${design}.${step}.v
     write_hdl > ${new_file}
 }
 

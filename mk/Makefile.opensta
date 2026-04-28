@@ -1,0 +1,61 @@
+# Set up the design
+include $(BSG_DESIGN_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_MK_DIR)/Makefile.hardware
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_DESIGN_TEST_MK_DIR)/Makefile.hardware
+
+include $(BSG_PEARLS_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_MK_DIR)/Makefile.hardware
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
+include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
+
+# $(1) -> synthesis tag
+define bsg_fn_opensta_analyze
+
+$(1)_OSTA_OPTS := $$(OSTA_OPTS)
+
+BUILD_SOURCES := $$($(1)_SCRIPTS)
+
+$(1)_OSTA_LOGFILE := $(abspath $(1)/time.log)
+$(1)_OSTA_SCRIPT := $(BSG_PEARLS_TCL_DIR)/timing.opensta.tcl
+
+$(1)/time: | $$(BUILD_SOURCES)
+	@$(MKDIR) -p $$(@D)
+	@$(ECHO) "set ::env(BSG_LOG_LEVEL) $$($(1)_LOG_LEVEL)" >> $(1)/bsg_design_setup.tcl
+	@$(ECHO) "set ::env(NETLIST) $$($(1)_NETLIST)" >> $(1)/bsg_design_setup.tcl
+	$(CD) $$(@D); \
+		$(OSTA) $$($(1)_OSTA_OPTS) $$($(1)_OSTA_SCRIPT) |& $(TEE) $$($(1)_OSTA_LOGFILE)
+time-$(1): $(1)/time
+
+clean::
+	@$(RMRF) $(1)
+
+endef
+
+yosys_SCRIPTS    :=
+yosys_SCRIPTS    += yosys/bsg_pearls_setup.tcl
+yosys_SCRIPTS    += yosys/bsg_design_setup.tcl
+yosys_SCRIPTS    += yosys/bsg_chip_pkg.tcl
+yosys_NETLIST    := $(wildcard $(BSG_DESIGN_YOSYS_DIR)/*/*.final.v)
+yosys_LOG_LEVEL  := 2
+
+genus_SCRIPTS    :=
+genus_SCRIPTS    += genus/bsg_pearls_setup.tcl
+genus_SCRIPTS    += genus/bsg_design_setup.tcl
+genus_SCRIPTS    += genus/bsg_chip_pkg.tcl
+genus_NETLIST    := $(wildcard $(BSG_DESIGN_GENUS_DIR)/*/*.final.v)
+genus_LOG_LEVEL  := 2
+
+dc_SCRIPTS       :=
+dc_SCRIPTS       += dc/bsg_pearls_setup.tcl
+dc_SCRIPTS       += dc/bsg_design_setup.tcl
+dc_SCRIPTS       += dc/bsg_chip_pkg.tcl
+dc_NETLIST       := $(wildcard $(BSG_DESIGN_DC_DIR)/*/*.final.v)
+dc_LOG_LEVEL     := 2
+
+
+# TODO: pre-process out opensta defines with verilator
+#Using Verilator to preprocess into a clean file
+#verilator +define+SYNTHESIS -E your_file.v > preprocessed_file.v
+
+
