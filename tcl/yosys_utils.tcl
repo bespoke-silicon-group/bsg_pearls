@@ -44,8 +44,8 @@ proc bsg_yosys_save_step { design step } {
         bsg_yosys_rename_module ${module} ${new_name}
     }
 
-    set new_file ${design}.${step}.v
-    yosys write_verilog -nostr -noattr -noexpr -nohex -nodec ${new_file}
+    yosys write_verilog -nostr -noattr -noexpr -nohex -nodec ${design}.${step}.v
+    close [open ${design}.${step}.sdc "a"]
 }
 
 proc bsg_yosys_read_design_slang { design vsources vdefines vincludes {vparams {}}} {

@@ -55,9 +55,8 @@ proc bsg_clk_gen_clock_create { osc_path clk_name clk_gen_period_int clk_gen_per
   set ds_out_pin [get_pins -leaf -of_objects [get_nets ${osc_path}ds_clk_out] -filter "pin_direction==out"]
   set ds_in_pin [get_pins -of_objects [get_cells -of_objects $ds_out_pin] -filter "is_data_pin==true"]
   set ds_ck_pin [get_pins -of_objects [get_cells -of_objects $ds_out_pin] -filter "is_clock_pin==true"]
-  #create_generated_clock -name $ds_clk_name -divide_by 2 -source $ds_ck_pin $ds_out_pin
   set ds_mux_pin [get_pins -of_objects [get_nets ${osc_path}mux_inst/data_i[1][0]]]
-  create_generated_clock -name $ds_clk_name -divide_by 2 -source $ds_ck_pin $ds_mux_pin
+  create_generated_clock -name $ds_clk_name -divide_by 2 -source $ds_ck_pin -master_clock [get_clocks $osc_clk_name] -add $ds_mux_pin
   set ds_sel_pins [get_pins ${osc_path}clk_gen_ds_inst/val_i[*]]
   set_case_analysis 0 $ds_sel_pins
 

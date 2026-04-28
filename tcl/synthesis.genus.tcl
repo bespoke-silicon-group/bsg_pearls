@@ -1,5 +1,5 @@
 #####################################################
-## Yosys Basic Synthesis Flow
+## Genus Basic Synthesis Flow
 #####################################################
 
 # Must set these environment variables, everything else is optional (hopefully)
@@ -10,7 +10,7 @@ source ${BSG_PEARLS_TCL_DIR}/bsg_utils.tcl
 source ${BSG_PEARLS_TCL_DIR}/genus_utils.tcl
 
 #####################################################
-## dc
+## genus
 #####################################################
 bsg_genus_setup_init ${BSG_LOG_LEVEL}
 
@@ -143,14 +143,6 @@ if {[llength [info procs bsg_design_constrain]]} {
 bsg_constrain_synchronizer_regex ".*BSG_SYNC1"
 
 bsg_genus_unwrap_design ${wrapper} ${design}
-
-# set default loads and drivers to satisfy warnings
-# not generalized
-set_load -min [load_of [get_lib_pin sky130_fd_sc_hd__buf_2/A]] [all_outputs]
-set_load -max [load_of [get_lib_pin sky130_fd_sc_hd__buf_8/A]] [all_outputs]
-
-set_driving_cell -no_design_rule -min -lib_cell sky130_fd_sc_hd__buf_2 [all_inputs]
-set_driving_cell -no_design_rule -max -lib_cell sky130_fd_sc_hd__buf_8 [all_inputs]
 
 check_timing > ${design}.check_timing.rpt
 

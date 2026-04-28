@@ -6,8 +6,7 @@ source $::env(BSG_PEARLS_TCL_DIR)/common/bsg_tag.constraints.tcl
 # The actual constraints
 #########################################
 proc bsg_design_constrain { hier } {
-    set x [get_cells $hier]
-    puts "Constraining bsg_clk_gen_pearl at $x"
+    puts "Constraining bsg_clk_gen_pearl at $hier"
 
     set ext_clk_name           "ext_clk"
     set ext_clk_period_ns      0.666 ; # 1.5 GHz
@@ -87,7 +86,7 @@ proc bsg_design_constrain { hier } {
     set_load -min [load_of [get_lib_pin $::env(PDK_LOAD_MIN)]] [all_outputs]
     set_load -max [load_of [get_lib_pin $::env(PDK_LOAD_MAX)]] [all_outputs]
 
-    set_driving_cell -no_design_rule -min -lib_cell $::env(PDK_DRIVER_MIN) [all_inputs]
-    set_driving_cell -no_design_rule -max -lib_cell $::env(PDK_DRIVER_MAX) [all_inputs]
+    set_driving_cell -min -lib_cell $::env(PDK_DRIVER_MIN) [all_inputs]
+    set_driving_cell -max -lib_cell $::env(PDK_DRIVER_MAX) [all_inputs]
 }
 

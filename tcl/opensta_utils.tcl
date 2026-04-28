@@ -5,6 +5,9 @@ proc bsg_opensta_setup_init { log_level } {
     bsg_pr_info "Aliasing get_fanx to all_fanx"
     interp alias {} all_fanout {} get_fanout
     interp alias {} all_fanin  {} get_fanin
+
+    set sta_continue_on_error 1
+    set sta_dynamic_loop_breaking 1
 }
 
 proc sizeof_collection { coll } {

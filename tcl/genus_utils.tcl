@@ -15,8 +15,8 @@ proc bsg_genus_setup_init { log_level } {
 proc bsg_genus_unwrap_design { wrapper design } {
     bsg_pr_info "Unwrapping ${wrapper}"
     set top [get_cells *]
-    set_db $top .ungroup true
-    ungroup -simple $top
+    set_db $top .ungroup_ok true
+    ungroup -verbose -simple $top
     bsg_pr_info "Toplevel is now ${design}"
     return ${design}
 }
@@ -36,10 +36,11 @@ proc bsg_genus_save_step { design step } {
     }
 
     bsg_pr_info "Renaming top to ${new_top}"
-    rename_obj [current_design] ${new_top}
+    rename_obj [current_design] ${design}
 
     set new_file ${design}.${step}.v
-    write_hdl > ${new_file}
+    write_hdl > ${design}.${step}.v
+    write_sdc -strict > ${design}.${step}.sdc
 }
 
 proc _bsg_get_cells_impl { regex } {
@@ -60,7 +61,7 @@ proc _bsg_dont_gate_cells_impl { cells } {
 }
 
 proc _bsg_set_ungroup_cells_impl { cells } {
-    set_db ${cells} .ungroup true
+    set_db ${cells} .ungroup_ok true
 }
 
 proc _bsg_set_size_only_impl { cells } {

@@ -10,21 +10,23 @@ include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.collateral
 include $(BSG_PEARLS_TEST_MK_DIR)/Makefile.hardware
 
 # $(1) -> synthesis tag
-define bsg_fn_opensta_time
+define bsg_fn_openroad_floorplan
 
-$(1)_OSTA_OPTS := $$(OSTA_OPTS)
+$(1)_OR_OPTS := $$(OR_OPTS)
 
 BUILD_SOURCES := $$($(1)_SCRIPTS)
 
-$(1)_OSTA_LOGFILE := $(abspath $(1)/time.log)
-$(1)_OSTA_SCRIPT := $(BSG_PEARLS_TCL_DIR)/timing.opensta.tcl
+$(1)_OR_LOGFILE := $(abspath $(1)/floorplan.log)
+$(1)_OR_SCRIPT := $(BSG_PEARLS_TCL_DIR)/floorplan.openroad.tcl
 
-$(1)_OSTA_OPTS := $$(OSTA_OPTS)
-ifndef $(1)_SHELL
-$(1)_OSTA_OPTS += -exit
+$(1)_OR_OPTS := $$(OR_OPTS)
+$(1)_OR_OPTS += -threads 4
+
+ifdef $(1)_GUI
+$(1)_OR_OPTS += -gui
 endif
 
-$(1)/time: | $$(BUILD_SOURCES)
+$(1)/floorplan: | $$(BUILD_SOURCES)
 	@$(MKDIR) -p $$(@D)
 	@for n in $$(HARD_NSOURCES); do \
 		$(VERILATOR) +define+SYNTHESIS -E $$$$n | $(SED) -E 's/^`line.*//' | $(SED) '/^$$$$/d' >> $(1)/$$$$(basename $$$$n); \
@@ -33,8 +35,8 @@ $(1)/time: | $$(BUILD_SOURCES)
 	@$(ECHO) "set ::env(NETLIST) $$($(1)_NETLIST)" >> $(1)/bsg_design_setup.tcl
 	@$(ECHO) "set ::env(SDC) $$($(1)_SDC)" >> $(1)/bsg_design_setup.tcl
 	$(CD) $$(@D); \
-		$(OSTA) $$($(1)_OSTA_OPTS) $$($(1)_OSTA_SCRIPT) |& $(TEE) $$($(1)_OSTA_LOGFILE)
-time-$(1): $(1)/time
+		$(OPENROAD) $$($(1)_OR_OPTS) $$($(1)_OR_SCRIPT) -log $$($(1)_OR_LOGFILE)
+floorplan-$(1): $(1)/floorplan
 
 clean::
 	@$(RMRF) $(1)
@@ -48,7 +50,7 @@ yosys_SCRIPTS    += yosys/bsg_chip_pkg.tcl
 yosys_NETLIST    := $(wildcard $(BSG_DESIGN_YOSYS_DIR)/*/*.final.v)
 yosys_SDC        := $(wildcard $(BSG_DESIGN_YOSYS_DIR)/*/*.final.sdc)
 yosys_LOG_LEVEL  := 2
-#yosys_SHELL      := defined
+#yosys_GUI        := defined
 
 genus_SCRIPTS    :=
 genus_SCRIPTS    += genus/bsg_pearls_setup.tcl
@@ -57,7 +59,7 @@ genus_SCRIPTS    += genus/bsg_chip_pkg.tcl
 genus_NETLIST    := $(wildcard $(BSG_DESIGN_GENUS_DIR)/*/*.final.v)
 genus_SDC        := $(wildcard $(BSG_DESIGN_GENUS_DIR)/*/*.final.sdc)
 genus_LOG_LEVEL  := 2
-#genus_SHELL      := defined
+#genus_GUI        := defined
 
 dc_SCRIPTS       :=
 dc_SCRIPTS       += dc/bsg_pearls_setup.tcl
@@ -66,5 +68,5 @@ dc_SCRIPTS       += dc/bsg_chip_pkg.tcl
 dc_NETLIST       := $(wildcard $(BSG_DESIGN_DC_DIR)/*/*.final.v)
 dc_SDC           := $(wildcard $(BSG_DESIGN_DC_DIR)/*/*.final.sdc)
 dc_LOG_LEVEL     := 2
-#dc_SHELL         := defined
+#dc_GUI           := defined
 

@@ -79,13 +79,13 @@ proc bsg_dc_save_step { design step } {
     }
 
     bsg_pr_info "Renaming top to ${new_top}"
-    rename_design [current_design] ${new_top}
+    rename_design [current_design] ${design}
 
-    set new_file ${design}.${step}.v
     set_fix_multiple_port_nets -all -buffer_constants
     define_name_rules verilog -add_dummy_nets
     change_names -rules verilog -hierarchy -verbose
-    write_file -format verilog -hierarchy -output ${new_file}
+    write_file -format verilog -hierarchy -output ${design}.${step}.v
+    write_sdc -nosplit -output ${design}.${step}.sdc
 }
 
 proc _bsg_get_cells_impl { regex } {
