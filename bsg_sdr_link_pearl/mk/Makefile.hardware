@@ -1,0 +1,35 @@
+
+VPKG += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_pkg.sv
+VPKG += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_pkg.sv
+VPKG += $(BSG_SDR_LINK_PEARL_DIR)/v/bsg_sdr_link_pearl_pkg.sv
+
+VSOURCES += $(BSG_SDR_LINK_PEARL_DIR)/v/bsg_sdr_link_pearl.sv
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_fifo.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_ptr_gray.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_credit_counter.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_sync_sync.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_launch_sync_sync.sv
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_parallel_in_serial_out.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.sv
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_sdr.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_sdr_downstream.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_sdr_upstream.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_source_sync_downstream.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_source_sync_upstream_sync.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_osdr_phy.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_osdr_phy_phase_align.sv
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_link/bsg_link_isdr_phy.sv
+
+VINCLUDES += $(BSG_PEARLS_SRC_DIR)
+VINCLUDES += $(BSG_SDR_LINK_PEARL_SRC_DIR)
+VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_clk_gen
+VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_misc
+VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_tag
+
+HARD_VSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_link/bsg_link_osdr_phy.sv
+HARD_VSOURCES += $(BASEJUMP_STL_HARD_DIR)/bsg_link/bsg_link_isdr_phy.sv
+
